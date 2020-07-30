@@ -5,6 +5,18 @@
 -------------------------------------------------
 
 
+https://www.docker.com/
+https://hub.docker.com/
+
+https://subicura.com/2017/01/19/docker-guide-for-beginners-1.html
+https://subicura.com/2017/01/19/docker-guide-for-beginners-2.html
+https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-deploy.html
+
+http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
+
+https://kubernetes.io/
+
+
 docker info
 
 docker version
