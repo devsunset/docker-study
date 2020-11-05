@@ -62,77 +62,6 @@ docker exec -it mysql /bin/bash
 
 ########################################################
 
-#ubuntu
-docker run --rm -it ubuntu:16.04 /bin/bash
-
-#redis
-docker run -d -p 1234:6379 redis
-
-# redis test
-$ telnet localhost 1234
-set mykey hello
-+OK
-get mykey
-$5
-hello
-
-# mysql
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  mysql
-
-# MySQL test
-$ mysql -h127.0.0.1 -uroot
-
-mysql> show databases;
-+--------------------+
-| Database           |
-+--------------------+
-| information_schema |
-| mysql              |
-| performance_schema |
-| sys                |
-+--------------------+
-4 rows in set (0.00 sec)
-
-mysql> quit
-
-# before
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  mysql:5.7
-
-# after
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  -v /my/own/datadir:/var/lib/mysql \ # <- volume mount
-  mysql:5.7
-
-#WordPress
-# create mysql database
-$ mysql -h127.0.0.1 -uroot
-create database wp CHARACTER SET utf8;
-grant all privileges on wp.* to wp@'%' identified by 'wp';
-flush privileges;
-quit
-
-# run wordpress container
-docker run -d -p 8080:80 \
-  --link mysql:mysql \
-  -e WORDPRESS_DB_HOST=mysql \
-  -e WORDPRESS_DB_NAME=wp \
-  -e WORDPRESS_DB_USER=wp \
-  -e WORDPRESS_DB_PASSWORD=wp \
-  wordpress
-
-#tensorflow
-docker run -d -p 8888:8888 -p 6006:6006 teamlab/pydata-tensorflow:0.1
-
-
-
 #  도커 버전 확인
 docker -v
 
@@ -208,4 +137,75 @@ docker build -t {이미지명} .
 # docker-compose 파일이 있는 디렉토리 기준
 docker-compose up
 * 백그라운드에서 데몬으로 돌도록 하려면 -d 옵션
+
+########################################################
+
+#ubuntu
+docker run --rm -it ubuntu:16.04 /bin/bash
+
+#redis
+docker run -d -p 1234:6379 redis
+
+# redis test
+$ telnet localhost 1234
+set mykey hello
++OK
+get mykey
+$5
+hello
+
+# mysql
+docker run -d -p 3306:3306 \
+  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
+  --name mysql \
+  mysql
+
+# MySQL test
+$ mysql -h127.0.0.1 -uroot
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+4 rows in set (0.00 sec)
+
+mysql> quit
+
+# before
+docker run -d -p 3306:3306 \
+  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
+  --name mysql \
+  mysql:5.7
+
+# after
+docker run -d -p 3306:3306 \
+  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
+  --name mysql \
+  -v /my/own/datadir:/var/lib/mysql \ # <- volume mount
+  mysql:5.7
+
+#WordPress
+# create mysql database
+$ mysql -h127.0.0.1 -uroot
+create database wp CHARACTER SET utf8;
+grant all privileges on wp.* to wp@'%' identified by 'wp';
+flush privileges;
+quit
+
+# run wordpress container
+docker run -d -p 8080:80 \
+  --link mysql:mysql \
+  -e WORDPRESS_DB_HOST=mysql \
+  -e WORDPRESS_DB_NAME=wp \
+  -e WORDPRESS_DB_USER=wp \
+  -e WORDPRESS_DB_PASSWORD=wp \
+  wordpress
+
+#tensorflow
+docker run -d -p 8888:8888 -p 6006:6006 teamlab/pydata-tensorflow:0.1
 
