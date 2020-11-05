@@ -62,6 +62,9 @@ docker exec -it mysql /bin/bash
 
 ########################################################
 
+https://www.yalco.kr/36_docker/
+git clone https://gitlab.com/yalco/practice-docker.git
+
 #  도커 버전 확인
 docker -v
 
