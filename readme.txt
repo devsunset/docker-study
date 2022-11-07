@@ -3,10 +3,19 @@
 			# DOCKER-WORK #
 
 -------------------------------------------------
-
+# Docker
 
 https://www.docker.com/
+
 https://hub.docker.com/
+
+https://kubernetes.io/
+
+
+-------------------------------------------------
+# Reference
+
+https://github.com/alicek106/start-docker-kubernetes
 
 https://subicura.com/2017/01/19/docker-guide-for-beginners-1.html
 https://subicura.com/2017/01/19/docker-guide-for-beginners-2.html
@@ -14,8 +23,8 @@ https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-depl
 
 http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
 
-https://kubernetes.io/
-
+-------------------------------------------------
+# Docker 
 
 docker info
 
