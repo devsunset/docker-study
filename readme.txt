@@ -61,6 +61,23 @@ https://docs.docker.com/desktop/install/windows-install/
 
 Docker Desktop 네트워크 , 볼륨 기능 등이 일부 미지원 
 
+관리자 계정(root) 가 아닌 일반 유저 계정으로 docker를 실행하는 법
+
+1. 도커 그룹 생성 
+sudo groupadd docker
+
+2. 현재 유저를 도커 그룹에 포함
+sudo usermod -aG docker $USER
+
+3. 접근 에러가 발생하지 않도록 미리 권한 열기 
+sudo chmod 666 /var/run/docker.sock
+
+4. docker 서비스 재시작 or reboot
+sudo service docker restart
+
+5. 실행 확인
+docker run hello-world
+
 -------------------------------------------------
 
 docker info
