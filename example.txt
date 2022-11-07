@@ -2,7 +2,13 @@
 # EXAMPLE
 
 #ubuntu
-docker run --rm -it ubuntu:16.04 /bin/bash
+docker run  -it ubuntu:14.04 /bin/bash
+
+# apache 설치 
+docker run  -i -t --name mywebserver -p 80:80 ubuntu:14.04
+apt-get upgrade
+apt-get install apache2 -y
+service  apache2 start
 
 #redis
 docker run -d -p 1234:6379 redis
@@ -66,13 +72,3 @@ docker run -d -p 8080:80 \
   -e WORDPRESS_DB_USER=wp \
   -e WORDPRESS_DB_PASSWORD=wp \
   wordpress
-
-#tensorflow
-docker run -d -p 8888:8888 -p 6006:6006 teamlab/pydata-tensorflow:0.1
-
-
-# apache 설치 
-docker run -i -t --name mywebserver -p 80:80 ubuntu
-apt-get upgrade
-apt-get install apache2 -y
-service  apache2 start

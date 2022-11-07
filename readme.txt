@@ -266,23 +266,28 @@ service  apache2 start
 docker run -i -t --name mywebserver -p 3306:3306 -p 80:80 ubuntu:14.04
 호스트의 특정 ip를 사용하려면 -p 192.168.0.100:7777:80 같은 형식으로 설정
 
+docker port mywebserver
+포트 확인 명령어 
 
+wordpress 설치 예시 
+docker run -d --name wordpressdb -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress mysql:5.7
+docker run -d -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=password \
+ --name wordpress  --link wordpressdb:mysql -p 80  wordpress
 
+-d 옵션 컨테이너를 백그라운드에서 동작하는 애플리케이션으로써 실행
+-e 옵션 컨테이너 내부의 환경 변수 echo ${ENVIROMENT_NAME} 으로 간단히 확인 가능
+--link 내부 IP 알 필요 없이 컨테이너에 별명으로 접근 가능하게 설정 (deprecated 옵션 , 브리지 네트워크 사용하는 것 권장)
 
+docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+docker exec -it wordpressdb /bin/bash
+컨테이너 내부 콘솔 접속 
 
-
-
-
-
-
+docker exec wordpressdb ls /
+단순히 결과만 반환
 
 
 docker rmi [OPTIONS] IMAGE [IMAGE...]
 이미지 삭제 
-
-docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
-docker exec -it mysql /bin/bash
-컨테이너 내부 콘솔 접속 
 
 docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
