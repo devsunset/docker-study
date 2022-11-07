@@ -17,8 +17,6 @@ https://kubernetes.io/
 ########################################################
 # Reference
 
-https://github.com/alicek106/start-docker-kubernetes
-
 https://www.yalco.kr/36_docker/
 
 https://subicura.com/2017/01/19/docker-guide-for-beginners-1.html
@@ -27,34 +25,34 @@ https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-depl
 
 http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
 
+https://github.com/alicek106/start-docker-kubernetes
+
 ########################################################
 # Docker Install
 
+#  커널 버젼 확인 최소 3.10 버전 이상에서 도커 정상 구동됨
 uname -r 
-커널 버젼 확인 최소 3.10 버전 이상에서 도커 정상 구동됨
 
+#  64bit 실행 권장 32bit 에서도 가능 하나 권장 하지 않음
 getconf LONG_BIT
-64bit 실행 권장 32bit 에서도 가능 하나 권장 하지 않음
 
-sudo 명령어를 통해 설치 하거나 root 권한을 소유한 계정으로 설치 진행
+#  sudo 명령어를 통해 설치 하거나 root 권한을 소유한 계정으로 설치 진행
 
-- Install
-Linux 
+#  Linux 설치
 https://www.docker.com/
 docker 공식 문서 가이드 내용에 따라 설치 
-(설치 시 문서 검색 후 설치 필요)
 
 docker는 리눅스에서 설치 운영 하는게 맞으나 Windows , Mac에서 사용 가능 (Docker Desktop)
 Mac - xhyve - sierra 10.13 이상
 Windows - Hyper-V  - wnidow 10 이상
 Docker Desktop 네트워크 , 볼륨 기능 등이 일부 미지원 
 
-관리자 계정(root) 가 아닌 일반 유저 계정으로 docker를 실행하는 법
+#  관리자 계정(root) 가 아닌 일반 유저 계정으로 docker를 실행하는 법
 1. 도커 그룹 생성 
     sudo groupadd docker
 2. 현재 유저를 도커 그룹에 포함
     sudo usermod -aG docker $USER
-3. 접근 에러가 발생하지 않도록 미리 권한 열기 
+3. 접근 에러가 발생하지 않도록 권한 부여
     sudo chmod 666 /var/run/docker.sock
 4. docker 서비스 재시작 or reboot
     sudo service docker restart
@@ -62,8 +60,10 @@ Docker Desktop 네트워크 , 볼륨 기능 등이 일부 미지원
     docker run hello-world
 
 ########################################################
-# Docker Simple Review
+# Docker  Getting started
+
 https://www.yalco.kr/36_docker/
+
 git clone https://gitlab.com/yalco/practice-docker.git
 
 #  도커 버전 확인
@@ -80,7 +80,7 @@ docker images
 docker create {옵션} {이미지명}:{태그}
 # 예: docker create -it python
 
-# 만들어진 컨테이너 시작하기 (이미지에 CMD로 지정해놓은 작업 시키기)
+# 만들어진 컨테이너 시작하기
 docker start {컨테이너 id 또는 이름}
 
 # 컨테이너로 들어가기 (컨테이너 내 CLI 이용하기)
@@ -95,8 +95,8 @@ docker run {이미지명}:{태그}
 -it	컨테이너로 들어갔을 때 bash로 CLI 입출력을 사용할 수 있도록 해 줍니다.
 --name {이름}	컨테이너 이름 지정
 -p {호스트의 포트 번호}:{컨테이너의 포트 번호}	호스트와 컨테이너의 포트를 연결합니다.
---rm	컨테이너가 종료되면{내부에서 돌아가는 작업이 끝나면} 컨테이너를 제거합니다.
 -v {호스트의 디렉토리}:{컨테이너의 디렉토리}	호스트와 컨테이너의 디렉토리를 연결합니다.
+--rm	컨테이너가 종료되면{내부에서 돌아가는 작업이 끝나면} 컨테이너를 제거합니다. (필요시만 사용)
 
 # 동작중인 컨테이너 재시작
 docker restart {컨테이너 id 또는 이름}
@@ -128,7 +128,7 @@ docker stop $(docker ps -aq)
 # 사용되지 않는 모든 도커 요소(컨테이너, 이미지, 네트워크, 볼륨 등) 삭제
 docker system prune -a
 
-# 아래를 복붙하여 함께 실행하면 편리합니다.
+# 아래를 복붙하여 함께 실행하면 편리
 docker stop $(docker ps -aq)
 docker system prune -a
 * 확인 질문에 y로 답하고 마무리합니다.
@@ -143,17 +143,17 @@ docker-compose up
 * 백그라운드에서 데몬으로 돌도록 하려면 -d 옵션
 
 ########################################################
-# Docker work
+# Docker Guide
 
+# 도커 정보 확인
 docker info
-도커 정보 확인
 
-docker version
+# 도커 버젼 확인
 docker -v
-도커 버젼 확인
+docker version
 
+# 도커 컨테이너 다운로드 및 실행 
 docker run ubuntu
-도커 컨테이너 다운로드 및 실행 
 
 docker run -it ubuntu bash
 -i 상호 입출력 옵션
@@ -167,44 +167,42 @@ e96e057aae67: Pull complete
 Digest: sha256:4b1d0c4a2d2aaf63b37111f34eb9fa89fa1bf53dd6e4ca954d47caebca4005c2
 Status: Downloaded newer image for ubuntu:latest
 
-root@96252752ab9d:/# ls
+root@96252752ab9d:/# ls    (96252752ab9d 호스트명은 16진수 해시 값으로 랜덤하게 생성됨)
 bin   dev  home  lib32  libx32  mnt  proc  run   srv  tmp  var
 boot  etc  lib   lib64  media   opt  root  sbin  sys  usr
 
-호스트명은 16진수 해시 값으로 랜덤하게 생성됨
+# 컨테이너 종료 후 돌아오기     : exit , Ctrl-D
 
-컨테이너 종료 후 돌아오기     : exit , Ctrl-D
-컨테이너 종료 없이 돌아오기  : Ctrl-P,Q
+# 컨테이너 종료 없이 돌아오기  : Ctrl-P,Q
 
+# 도커 이미지 검색
 docker search image_name
-도커 이미지 검색
 
 image name : [저장소 이름]/[이미지 이름]:[태그]   
 [저장소 이름] : 이미지가 저장된 장소 , 없으면 기본적으로 제공하는 이미지 저장소인 docker hub의 공식 이미지 , 생성할때 필수 항목이 아니므로 생략할수도 있음
 [이미지 이름] : 생략 불가 
 [태그] : 생략 가능 - 생략하면 도커 엔진은 이미지의 태그를 latest로 인식
 
-docker images [OPTIONS] [REPOSITORY[:TAG]]
-
+# 도커 이미지 목록 출력
 docker images [OPTIONS] [REPOSITORY[:TAG]]
 docker images
-도커 이미지 목록 출력
 
+# 도커 이미지 다운로드 
 docker pull image_name:latest
 ex) docker pull centos:latest
-도커 이미지 다운로드 
 
+# 도커 이미지 삭제
 docker rmi [OPTIONS] IMAGE [IMAGE...]
-이미지 삭제 
 
+# 도커 컨테이너 생성 
 docker create -i -t --name mycentos centos:latest
-도커 컨테이너 생성 ( create  명령어로 컨테이너 생성시 run 명령어와 다르게 실행되지 않고 내부로 진입 하지 도 않음)
+( create  명령어로 컨테이너 생성시 run 명령어와 다르게 실행되지 않고 내부로 진입 하지 도 않음)
 
+# 컨테이너 시작
 docker start mycentos 
-컨테이너 시작
 
+# 내부로 진입 
 docker attach mycentos 
-내부로 진입 
 
 docker start [OPTIONS] CONTAINER [CONTAINER...]
 docker restart [OPTIONS] CONTAINER [CONTAINER...]
@@ -221,38 +219,38 @@ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
 -it     -i와 -t를 동시에 사용한 것으로 터미널 입력을 위한 옵션
 –link   컨테이너 연결 [컨테이너명:별칭]
 
+# 정지 되지 않은 컨테이너만 확인
 docker ps [OPTIONS]
 docker ps 
-정지 되지 않은 컨테이너만 확인
+
+# 정지된 컨테이너 포함 전체 컨테이너 목록 확인 
 docker ps -a
-정지된 컨테이너 포함 전체 컨테이너 목록 확인 
 docker ps -a -q 
  (-a 컨테이너 상태와 관계없이 모든 컨터이너 , -q 컨테이너 ID만 출력)
 
+# inspect 명령어로 컨테이너 전체 정보 확인 가능 위의 명령어는 Id 값 전체 값 확인 명령어 
 docker inspect mycentos | grep Id
-inspect 명령어로 컨테이너 전체 정보 확인 가능 위의 명령어는 Id 값 전체 값 확인 명령어 
 
+# 도커 name  변경 처리 
 docker rename mycentos centos 
-도커 name을 변경 처리 
 
+# 도커 ps 명령어 출력 항목 조정 처리 
 docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Image}}\t{{.Names}}
-도커 ps 명령어 출력 항목 조정 처리 
 
+# 컨테이너 삭제
 docker rm [OPTIONS] CONTAINER [CONTAINER...]
-컨테이너 삭제
 도커는 컨테이너가 실행중인 경우 삭제 안됨 stop 후 삭제 
 docker stop 컨테이너명
 docker rm 컨테이너명 
 docker rm -r 도커컨테이너명  (실행 중인 컨테이너라도 강제 삭제)
 
+# 모든 컨테이너 삭제 
 docker container prune
-모든 컨테이너 삭제 
-
 docker stop $(docker ps -a -q)
 docker rm $(docker ps -a -q)
 모든 컨테이너 중지 후 삭제 처리 
 
-컨테이너를 외부에 노출 
+# 컨테이너를 외부에 노출 
 기본적으로 도커는 컨테이너에 172.17.0.x의 IP를 순차적으로 할당
 기본적으로 컨테이너는 도커가 설치된 컨테이너에서만 접속 
 외부에 컨테이너의 애플리케이션을 노출하기 위해서는 eth0의 IP와 포트를 호스트의 IP와 포트로 바인딩 처리 필요
@@ -263,16 +261,16 @@ apt-get upgrade
 apt-get install apache2 -y
 service  apache2 start
 
--p 컨테이너의 포트를 호스트의 포트와 바인딩해 연결하는 옵션 
+# -p 컨테이너의 포트를 호스트의 포트와 바인딩해 연결하는 옵션 
 [호스트의 포트]:[컨테이너의 포트]
 여러개의 포트를 개방하려면 -p 옵션을 여러번 사용해서 설정
 docker run -i -t --name mywebserver -p 3306:3306 -p 80:80 ubuntu:14.04
 호스트의 특정 ip를 사용하려면 -p 192.168.0.100:7777:80 같은 형식으로 설정
 
+# 포트 확인 명령어 
 docker port mywebserver
-포트 확인 명령어 
 
-wordpress 설치 예시 
+# wordpress 설치 예시 
 docker run -d --name wordpressdb -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress mysql:5.7
 docker run -d -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=password \
  --name wordpress  --link wordpressdb:mysql -p 80  wordpress
@@ -281,15 +279,14 @@ docker run -d -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DB_USER=root -e WORDPRESS_
 -e 옵션 컨테이너 내부의 환경 변수 echo ${ENVIROMENT_NAME} 으로 간단히 확인 가능
 --link 내부 IP 알 필요 없이 컨테이너에 별명으로 접근 가능하게 설정 (deprecated 옵션 , 브리지 네트워크 사용하는 것 권장)
 
+# 컨테이너 내부 콘솔 접속 
 docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
 docker exec -it wordpressdb /bin/bash
-컨테이너 내부 콘솔 접속 
 
+# 단순히 결과만 반환
 docker exec wordpressdb ls /
-단순히 결과만 반환
 
-
-호스트 볼륨 처리 
+# 호스트 볼륨 처리 
 docker run -d --name wordpressdb_hostvolume  -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
  -v /home/wordpress_db:/var/lib/mysql mysql:5.7
 docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --link wordpressdb_hostvolume:mysql -p 80  wordpress
@@ -302,6 +299,8 @@ docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --l
 
 --volumes-from : -v 옵션으로 볼륨을 사용하는 컨테이너를 다른 컨테이너와 공유하는 옵션
 
+# 도커 볼륨
+docker volume create myvolume
 
 
 docker logs [OPTIONS] CONTAINER
