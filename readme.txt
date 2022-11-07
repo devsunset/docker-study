@@ -7,6 +7,8 @@
 
 https://www.docker.com/
 
+https://docs.docker.com/
+
 https://hub.docker.com/
 
 https://kubernetes.io/
@@ -24,7 +26,7 @@ https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-depl
 http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
 
 -------------------------------------------------
-# Docker work 
+# Docker Install
 
 uname -r 
 커널 버젼 확인 최소 3.10 버전 이상에서 도커 정상 구동됨
@@ -49,6 +51,15 @@ sudo 명령어를 통해 설치 하거나 root 권한을 소유한 계정으로 
 
 * docker 설치 제공 스크립트 (비추천)
 # wget -q0- get.docker.com | sh 
+
+docker는 리눅스에서 설치 운영 하는게 맞으나 Windows , Mac에서 사용 가능 (Docker Desktop)
+Mac - xhyve - sierra 10.13 이상
+https://docs.docker.com/desktop/install/mac-install/
+
+Windows - Hyper-V  - wnidow 10 이상
+https://docs.docker.com/desktop/install/windows-install/
+
+Docker Desktop 네트워크 , 볼륨 기능 등이 일부 미지원 
 
 -------------------------------------------------
 
