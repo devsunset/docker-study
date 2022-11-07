@@ -69,3 +69,10 @@ docker run -d -p 8080:80 \
 
 #tensorflow
 docker run -d -p 8888:8888 -p 6006:6006 teamlab/pydata-tensorflow:0.1
+
+
+# apache 설치 
+docker run -i -t --name mywebserver -p 80:80 ubuntu
+apt-get upgrade
+apt-get install apache2 -y
+service  apache2 start

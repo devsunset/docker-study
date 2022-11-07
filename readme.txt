@@ -174,7 +174,7 @@ boot  etc  lib   lib64  media   opt  root  sbin  sys  usr
 호스트명은 16진수 해시 값으로 랜덤하게 생성됨
 
 컨테이너 종료 후 돌아오기     : exit , Ctrl-D
-컨테이너 종료 없이 돌아오기  : Ctrl-Q  or Ctrl-P
+컨테이너 종료 없이 돌아오기  : Ctrl-P,Q
 
 docker search image_name
 도커 이미지 검색
@@ -248,6 +248,34 @@ docker container prune
 docker stop $(docker ps -a -q)
 docker rm $(docker ps -a -q)
 모든 컨테이너 중지 후 삭제 처리 
+
+컨테이너를 외부에 노출 
+기본적으로 도커는 컨테이너에 172.17.0.x의 IP를 순차적으로 할당
+기본적으로 컨테이너는 도커가 설치된 컨테이너에서만 접속 
+외부에 컨테이너의 애플리케이션을 노출하기 위해서는 eth0의 IP와 포트를 호스트의 IP와 포트로 바인딩 처리 필요
+
+docker run -i -t --name mywebserver -p 80:80 ubuntu:14.04
+(생성 후 아래 명령어로 apache  설치 후 호스트 컴퓨터에서 localhost로 접속 )
+apt-get upgrade
+apt-get install apache2 -y
+service  apache2 start
+
+-p 컨테이너의 포트를 호스트의 포트와 바인딩해 연결하는 옵션 
+[호스트의 포트]:[컨테이너의 포트]
+여러개의 포트를 개방하려면 -p 옵션을 여러번 사용해서 설정
+docker run -i -t --name mywebserver -p 3306:3306 -p 80:80 ubuntu:14.04
+호스트의 특정 ip를 사용하려면 -p 192.168.0.100:7777:80 같은 형식으로 설정
+
+
+
+
+
+
+
+
+
+
+
 
 docker rmi [OPTIONS] IMAGE [IMAGE...]
 이미지 삭제 
