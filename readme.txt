@@ -223,6 +223,8 @@ docker ps
 정지 되지 않은 컨테이너만 확인
 docker ps -a
 정지된 컨테이너 포함 전체 컨테이너 목록 확인 
+docker ps -a -q 
+ (-a 컨테이너 상태와 관계없이 모든 컨터이너 , -q 컨테이너 ID만 출력)
 
 docker inspect mycentos | grep Id
 inspect 명령어로 컨테이너 전체 정보 확인 가능 위의 명령어는 Id 값 전체 값 확인 명령어 
@@ -234,8 +236,18 @@ docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Image}}\t{{.Names}}
 도커 ps 명령어 출력 항목 조정 처리 
 
 docker rm [OPTIONS] CONTAINER [CONTAINER...]
-docker rm -v $(docker ps -a -q -f status=exited)
 컨테이너 삭제
+도커는 컨테이너가 실행중인 경우 삭제 안됨 stop 후 삭제 
+docker stop 컨테이너명
+docker rm 컨테이너명 
+docker rm -r 도커컨테이너명  (실행 중인 컨테이너라도 강제 삭제)
+
+docker container prune
+모든 컨테이너 삭제 
+
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+모든 컨테이너 중지 후 삭제 처리 
 
 docker rmi [OPTIONS] IMAGE [IMAGE...]
 이미지 삭제 
@@ -248,75 +260,5 @@ docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
 로그 확인
 
-########################################################
-# EXAMPLE
 
-#ubuntu
-docker run --rm -it ubuntu:16.04 /bin/bash
-
-#redis
-docker run -d -p 1234:6379 redis
-
-# redis test
-$ telnet localhost 1234
-set mykey hello
-+OK
-get mykey
-$5
-hello
-
-# mysql
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  mysql
-
-# MySQL test
-$ mysql -h127.0.0.1 -uroot
-
-mysql> show databases;
-+--------------------+
-| Database           |
-+--------------------+
-| information_schema |
-| mysql              |
-| performance_schema |
-| sys                |
-+--------------------+
-4 rows in set (0.00 sec)
-
-mysql> quit
-
-# before
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  mysql:5.7
-
-# after
-docker run -d -p 3306:3306 \
-  -e MYSQL_ALLOW_EMPTY_PASSWORD=true \
-  --name mysql \
-  -v /my/own/datadir:/var/lib/mysql \ # <- volume mount
-  mysql:5.7
-
-#WordPress
-# create mysql database
-$ mysql -h127.0.0.1 -uroot
-create database wp CHARACTER SET utf8;
-grant all privileges on wp.* to wp@'%' identified by 'wp';
-flush privileges;
-quit
-
-# run wordpress container
-docker run -d -p 8080:80 \
-  --link mysql:mysql \
-  -e WORDPRESS_DB_HOST=mysql \
-  -e WORDPRESS_DB_NAME=wp \
-  -e WORDPRESS_DB_USER=wp \
-  -e WORDPRESS_DB_PASSWORD=wp \
-  wordpress
-
-#tensorflow
-docker run -d -p 8888:8888 -p 6006:6006 teamlab/pydata-tensorflow:0.1
 
