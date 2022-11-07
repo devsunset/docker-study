@@ -292,7 +292,6 @@ docker exec wordpressdb ls /
 호스트 볼륨 처리 
 docker run -d --name wordpressdb_hostvolume  -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
  -v /home/wordpress_db:/var/lib/mysql mysql:5.7
-
 docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --link wordpressdb_hostvolume:mysql -p 80  wordpress
 호스트 볼륨 처리 
 -v 옵션 호스트의 디렉토리와 컨테이너의 디렉토리 공유

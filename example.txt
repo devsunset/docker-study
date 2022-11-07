@@ -72,3 +72,13 @@ docker run -d -p 8080:80 \
   -e WORDPRESS_DB_USER=wp \
   -e WORDPRESS_DB_PASSWORD=wp \
   wordpress
+
+
+# wordpress 설치 예시 
+docker run -d --name wordpressdb -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress mysql:5.7
+docker run -d -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=password \
+ --name wordpress  --link wordpressdb:mysql -p 80  wordpress
+
+docker run -d --name wordpressdb_hostvolume  -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
+ -v /home/wordpress_db:/var/lib/mysql mysql:5.7
+docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --link wordpressdb_hostvolume:mysql -p 80  wordpress
