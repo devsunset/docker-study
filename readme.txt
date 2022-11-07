@@ -300,6 +300,9 @@ docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --l
 -v 옵션을 여러번 사용 가능
 호스트에 이미 존재 하는 경우 컨테이너 파일 덮어 씌어짐 (호스트 파일이 컨테이너에 마운트 되는 형식임) 
 
+--volumes-from : -v 옵션으로 볼륨을 사용하는 컨테이너를 다른 컨테이너와 공유하는 옵션
+
+
 
 docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
