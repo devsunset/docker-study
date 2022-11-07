@@ -302,10 +302,10 @@ docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --l
 # 도커 볼륨
 docker volume create myvolume
 
-
+# 도커 로그 확인
 docker logs [OPTIONS] CONTAINER
-docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
-로그 확인
+docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}  
+
 
 
 

@@ -84,3 +84,4 @@ docker run -d --name wordpressdb_hostvolume  -e MYSQL_ROOT_PASSWORD=password -e 
  -v /home/wordpress_db:/var/lib/mysql mysql:5.7
  
 docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --link wordpressdb_hostvolume:mysql -p 80  wordpress
+ 
