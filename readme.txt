@@ -194,6 +194,9 @@ docker pull image_name:latest
 ex) docker pull centos:latest
 도커 이미지 다운로드 
 
+docker rmi [OPTIONS] IMAGE [IMAGE...]
+이미지 삭제 
+
 docker create -i -t --name mycentos centos:latest
 도커 컨테이너 생성 ( create  명령어로 컨테이너 생성시 run 명령어와 다르게 실행되지 않고 내부로 진입 하지 도 않음)
 
@@ -286,8 +289,6 @@ docker exec wordpressdb ls /
 단순히 결과만 반환
 
 
-docker rmi [OPTIONS] IMAGE [IMAGE...]
-이미지 삭제 
 
 docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
