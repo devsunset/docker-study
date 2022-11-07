@@ -143,7 +143,7 @@ docker-compose up
 * 백그라운드에서 데몬으로 돌도록 하려면 -d 옵션
 
 ########################################################
-# Docker 
+# Docker work
 
 docker info
 도커 정보 확인
@@ -219,8 +219,19 @@ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
 –link   컨테이너 연결 [컨테이너명:별칭]
 
 docker ps [OPTIONS]
+docker ps 
+정지 되지 않은 컨테이너만 확인
 docker ps -a
-컨테이너 목록 확인 
+정지된 컨테이너 포함 전체 컨테이너 목록 확인 
+
+docker inspect mycentos | grep Id
+inspect 명령어로 컨테이너 전체 정보 확인 가능 위의 명령어는 Id 값 전체 값 확인 명령어 
+
+docker rename mycentos centos 
+도커 name을 변경 처리 
+
+docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Image}}\t{{.Names}}
+도커 ps 명령어 출력 항목 조정 처리 
 
 docker rm [OPTIONS] CONTAINER [CONTAINER...]
 docker rm -v $(docker ps -a -q -f status=exited)
