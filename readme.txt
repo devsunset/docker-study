@@ -39,28 +39,14 @@ getconf LONG_BIT
 sudo 명령어를 통해 설치 하거나 root 권한을 소유한 계정으로 설치 진행
 
 - Install
-* ubuntu 18.04, 20.04
-# curl -fsSL https://download.docker.com/linux/ubuntu/gpg  | sudo apt-key add -
-# add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(slb_release -cs) stable"
-# apt-get update
-# apt-get install docker-create
-
-* CentOS 7, RHEL 7
-# yum install -y yum-utils
-# yum-config -manager --add-repo https://dwonload.docker.com/linux/centos/docker-ce.repo
-# yum install -y docker-ce
-# systemctl start docker 
-
-* docker 설치 제공 스크립트 (비추천)
-# wget -q0- get.docker.com | sh 
+Linux 
+https://www.docker.com/
+docker 공식 문서 가이드 내용에 따라 설치 
+(설치 시 문서 검색 후 설치 필요)
 
 docker는 리눅스에서 설치 운영 하는게 맞으나 Windows , Mac에서 사용 가능 (Docker Desktop)
 Mac - xhyve - sierra 10.13 이상
-https://docs.docker.com/desktop/install/mac-install/
-
 Windows - Hyper-V  - wnidow 10 이상
-https://docs.docker.com/desktop/install/windows-install/
-
 Docker Desktop 네트워크 , 볼륨 기능 등이 일부 미지원 
 
 관리자 계정(root) 가 아닌 일반 유저 계정으로 docker를 실행하는 법
@@ -250,8 +236,6 @@ docker exec -it mysql /bin/bash
 docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
 로그 확인
-
-
 
 ########################################################
 # EXAMPLE
