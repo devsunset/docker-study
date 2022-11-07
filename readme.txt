@@ -24,7 +24,33 @@ https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-depl
 http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
 
 -------------------------------------------------
-# Docker 
+# Docker work 
+
+uname -r 
+커널 버젼 확인 최소 3.10 버전 이상에서 도커 정상 구동됨
+
+getconf LONG_BIT
+64bit 실행 권장 32bit 에서도 가능 하나 권장 하지 않음
+
+sudo 명령어를 통해 설치 하거나 root 권한을 소유한 계정으로 설치 진행
+
+- Install
+* ubuntu 18.04, 20.04
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg  | sudo apt-key add -
+# add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(slb_release -cs) stable"
+# apt-get update
+# apt-get install docker-create
+
+* CentOS 7, RHEL 7
+# yum install -y yum-utils
+# yum-config -manager --add-repo https://dwonload.docker.com/linux/centos/docker-ce.repo
+# yum install -y docker-ce
+# systemctl start docker 
+
+* docker 설치 제공 스크립트 (비추천)
+# wget -q0- get.docker.com | sh 
+
+-------------------------------------------------
 
 docker info
 
