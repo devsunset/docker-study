@@ -105,7 +105,7 @@ boot  etc  lib   lib64  media   opt  root  sbin  sys  usr
 호스트명은 16진수 해시 값으로 랜덤하게 생성됨
 
 컨테이너 종료 후 돌아오기     : exit , Ctrl-D
-컨테이너 종료 없이 돌아오기  : Ctrl-P , Q
+컨테이너 종료 없이 돌아오기  : Ctrl-Q  or Ctrl-P
 
 docker search image_name
 도커 이미지 검색
@@ -126,7 +126,18 @@ ex) docker pull centos:latest
 도커 이미지 다운로드 
 
 docker create -i -t --name mycentos centos:latest
-도커 컨테이너 생성 
+도커 컨테이너 생성 ( create  명령어로 컨테이너 생성시 run 명령어와 다르게 실행되지 않고 내부로 진입 하지 도 않음)
+
+docker start mycentos 
+컨테이너 시작
+
+docker attach mycentos 
+내부로 진입 
+
+docker start [OPTIONS] CONTAINER [CONTAINER...]
+docker restart [OPTIONS] CONTAINER [CONTAINER...]
+docker stop [OPTIONS] CONTAINER [CONTAINER...]
+docker attach [OPTIONS] CONTAINER [CONTAINER...]
 
 docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
 -d      detached mode 흔히 말하는 백그라운드 모드
@@ -140,22 +151,22 @@ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
 
 docker ps [OPTIONS]
 docker ps -a
-
-docker start [OPTIONS] CONTAINER [CONTAINER...]
-docker restart [OPTIONS] CONTAINER [CONTAINER...]
-docker stop [OPTIONS] CONTAINER [CONTAINER...]
-docker attach [OPTIONS] CONTAINER [CONTAINER...]
+컨테이너 목록 확인 
 
 docker rm [OPTIONS] CONTAINER [CONTAINER...]
 docker rm -v $(docker ps -a -q -f status=exited)
+컨테이너 삭제
 
 docker rmi [OPTIONS] IMAGE [IMAGE...]
-
-docker logs [OPTIONS] CONTAINER
-docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
+이미지 삭제 
 
 docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
 docker exec -it mysql /bin/bash
+컨테이너 내부 콘솔 접속 
+
+docker logs [OPTIONS] CONTAINER
+docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}
+로그 확인
 
 ########################################################
 
@@ -239,6 +250,7 @@ docker-compose up
 * 백그라운드에서 데몬으로 돌도록 하려면 -d 옵션
 
 ########################################################
+# example
 
 #ubuntu
 docker run --rm -it ubuntu:16.04 /bin/bash
