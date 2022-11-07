@@ -253,7 +253,6 @@ docker rm $(docker ps -a -q)
 모든 컨테이너 중지 후 삭제 처리 
 
 컨테이너를 외부에 노출 
-
 기본적으로 도커는 컨테이너에 172.17.0.x의 IP를 순차적으로 할당
 기본적으로 컨테이너는 도커가 설치된 컨테이너에서만 접속 
 외부에 컨테이너의 애플리케이션을 노출하기 위해서는 eth0의 IP와 포트를 호스트의 IP와 포트로 바인딩 처리 필요
@@ -291,7 +290,6 @@ docker exec wordpressdb ls /
 
 
 호스트 볼륨 처리 
-
 docker run -d --name wordpressdb_hostvolume  -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
  -v /home/wordpress_db:/var/lib/mysql mysql:5.7
 
@@ -301,6 +299,7 @@ docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --l
 [호스트의 공유디렉토리]:[컨테이너의 공유 디렉토리]
 디렉토리 단위의 공유가 아닌 파일 단위도 가능
 -v 옵션을 여러번 사용 가능
+호스트에 이미 존재 하는 경우 컨테이너 파일 덮어 씌어짐 (호스트 파일이 컨테이너에 마운트 되는 형식임) 
 
 
 docker logs [OPTIONS] CONTAINER
