@@ -649,10 +649,22 @@ docker run -d --name fluented -p 24224:24224 \
 docker run -p 80:80 -d --log-driver=fluentd --log-opt fluentd-address=192.168.0.101:24224 \
 --log-opt tag=docker.nginx.webserver nginx
 
+# AWS CloudWatch 로그
+ AWS 환경에서 도커 사용하고 있다면 컨테이너 로그 드라이버 옵션을 설정 하는 것만으로 
+ CloudWatch 기능을 사용 가능
 
+AWS에서 아래 단계 설정
+ 클라우드워치에 해당하는 IAM 권한 생성
+ 로그 그룹 생성 (mylogs)
+ 로그 그룹에 로그 스트림 생성 (mylogstream)
+ 클라우드워치의 IAM 권한을 사용할 수 있는 EC2 인스턴스 생성과 로그 전송 
 
-
-
+docker run -i -t \
+--log-driver=awslogs \
+--log-opt awslogs-region=ap=northeast-2 \
+--log-opt awslogs-group=mylogs \
+--log-opt awslogs-stream=mylogstream ]
+ubuntu:14.04
 
 
 
