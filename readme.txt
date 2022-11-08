@@ -386,7 +386,42 @@ docker run -d -e WORDPRESS_DB_PASSWORD=password --name wordpress_hostvolume  --l
 --volumes-from : -v 옵션으로 볼륨을 사용하는 컨테이너를 다른 컨테이너와 공유하는 옵션
 
 # 도커 볼륨
+볼륨 생성
 docker volume create myvolume
+볼륨 리스트 확인
+docker volume ls
+
+아래 처럼 생성한 볼륨을 -v 옵션에 사용 가능
+-v [볼륨 이름]:[컨테이너 공유 디렉토리]
+(도커 볼륨도 호스트 볼륨 공유와 마찬가지로 호스트에 저장 함으로써 데이터가 보존 실제로 파일이 어디에 저장되는지는 사용자는 알필요 없음)
+
+inspect 명령어로 도커 볼륨 실제 경로 확인
+ubuntu@ubuntu2004:~$ docker inspect --type volume myvolume
+[
+    {
+        "CreatedAt": "2022-11-07T18:51:41-05:00",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/snap/docker/common/var-lib-docker/volumes/myvolume/_data",
+        "Name": "myvolume",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+
+도커 volume create 생성 하지 않아도 -v 옵션 시 자동으로 생성 됨 
+docker run -i -t --name volume_autho -v /root ubuntu:14.04
+
+사용하지 않는 volume 한꺼번에 삭제 처리
+docker volume prune
+
+컨테이너가 아닌 외부에 데이터를 저장 하고 컨테이너는 그 데이터로 동작하게 설계 하는 것을 stateless라고 함
+위와 반대로 컨테이너가 데이터를 저장 하는 경우 stateful
+
+-v 옵션 대신 --mount 옵션 사용 가능
+docker run -i -t --name mount_option --mount type=volume, source=myvolume, target=/root ubuntu:14.04
+docker run -i -t --name mount_option --mount type=bind, source=/home/wordpress_db,target=/home/testdir ubuntu:14.04
+
 
 # 도커 로그 확인
 docker logs [OPTIONS] CONTAINER
