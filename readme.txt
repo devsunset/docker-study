@@ -422,6 +422,59 @@ docker volume prune
 docker run -i -t --name mount_option --mount type=volume, source=myvolume, target=/root ubuntu:14.04
 docker run -i -t --name mount_option --mount type=bind, source=/home/wordpress_db,target=/home/testdir ubuntu:14.04
 
+# 도커 네트워크   (veth - virtual eth)
+도커컨테이너1(eth0 lo)  , 도커컨테이너2(eth0 lo) ,  도커컨테이너3(eth0 lo)
+            veth..                           veth..                           veth..    
+                                             docker0
+                                                 eth0
+
+도커는 내부 IP를 순차적으로 할당 IP는 컨테이너가 재시작할 때마다 변경될 수도 있음
+veth라는 네트워크 인터페이스를 생성 
+
+아래 명령어로 docker0 브릿지에 veth이 실제로 바인딩 되었는지 확인 
+brctl show docker0 
+
+도커가 자체적으로 제공하는 네트워크 드라이버
+bridge, host, none, container, overlay 
+
+기본적으로 사용할 수 있는 네트워크 드라이버 확인
+ docker network ls
+ 
+ docker network inspect bridge
+ 아무런 설정 없이 컨테이너 생성하면 자동으로 docker0브릿지 사용 
+
+# bridge 네트워크
+docker network create --driver bridge mybridge
+docker run -i -t --name mynetwork_container --net mybridge ubuntu:14.04
+docker network disconnect , connect (bridge, overlay 네트워크만 사용 가능 host, none 은 사용 불가 )
+docker network disconnect mybridge mynetwork_container
+docker network connect bridge mynetwork_container
+
+docker network create --driver=bridge \
+--subnet=172.72.0.0/16 \
+--ip-range=172.72.0.0/24 \
+--gateway=172.72.0.1 \
+my_custom_network
+
+# host 네트워크
+네트워크를 호스트로 설정하면 호스트의 네트워크 환경 그대로 사용
+docker run -i -t --name network_host --net host ubuntu:14.04
+호스트 머신에서 설정한 호스트 이름도 컨테이너가 물려받기 때문에 무작위 16진수가 아닌 도커엔진이 설치된 호스트 머신의 호스트 이름으로 설정됨
+host 네트워크로 설정하면 별도의 포트포워딩 없이 바로 서비스 가능
+
+# none 네트워크
+docker run -i -t --name network_none --net none ubuntu:14.04
+아무런 네트워크도 사용 하지 않음 외부와 연결이 단절
+네트워크 인터페이스 확인하면 로컬 호스트를 나타내는  lo 외에는 존재하지 않음
+
+# Container 네트워크 
+docker run -i -t -d --name network_container1 ubuntu:14.04
+docker run -i -t -d --name network_container2 --net container:network_container1 ubuntu:14.04
+다른 컨테이너의 네트워크 네임스페이스 환경을 공유(공유되는 속성은 내부 IP, 네트워크 인터페이스의 MAC주소)
+내부 IP를 새로 할당 받지 않으며 호스트에 veth로 시작하는 가상 네트워크 인터페이스도 생성되지 않음
+network_container2는 network_container1과 동일 
+
+
 
 # 도커 로그 확인
 docker logs [OPTIONS] CONTAINER
