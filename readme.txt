@@ -666,6 +666,53 @@ docker run -i -t \
 --log-opt awslogs-stream=mylogstream ]
 ubuntu:14.04
 
+# 컨테이너 자원 할당 제한
+   기본은 호스트 자원 전부를 사용
+   docker update (변경할 자원 제한) (컨테이너 이름)
 
+   docker run -i -t --name ubuntu ubuntu:14.04
 
+ #  메모리 제한 (m, g 최소는 6M)
+   docker update --memory-swap="128MB" --memory="128MB" ubuntu
+
+#   cpu 설정 변경
+   --cpu-shares 컨테이너에 가중치를 설정해 해당 컨테이너가 CPU를 상대적으로 얼마나 사용할 수 있는지 설정 (갯수가 아닌 비중으로 할당)
+   상대적인 값을 가짐 아무런 설정을 하지 않았을때 가지는 값 1024 이는 CPU 할당에서 1의 비중을 뜻함
+   docker run -i -t --name cpu_share --cpu-shares 1024 ubuntu:14.04
+
+   apt-get install stress
+   설치 후 stress --cpu 1 명령어로 cpu 부하 확인 
+
+--cpuset-cpus 호스트에 cpu가 여러개 있을 경우 특정 cpu만 사용 하도록 설정
+   docker update --cpuset-cpus=1 ubuntu
+
+   apt-get install htop 설치 후 확인 가능
+
+--cpuset-cpus="0,3" 은 1, 4번째 cpu 사용 --cpuset-cpus="0-2"는 1,2,3번째 CPU를 사용하게 설정
+
+--cpu-period, --cpu-quota 컨테이너 CFS(Completely Fail Scheduler) 주기는 기본으로 100ms로 설정 해당 옵션으로 변경 가능
+docker run -d --name quota_1_4 \
+--cpu-period=10000 \
+--cpu-quota=2500 \
+ubuntu:14.04
+
+stress --cpu 1 로 확인
+
+--cpus 옵션은 --cpu-period, --cpu-quota와 동일한 기능을 하지만 직관적으로 CPU 개수를 직접 지정 한다는게 차이 
+--cpus=0.5  설정 값과 --cpu-period=100000 --cpu-quota=50000 설정 값은 동일
+
+# Block I/O 제한 
+--device-write-bps, --device-read-bps, --device-write-iops, --device-read-iops옵션으로 블록 입출력 제한 할 수 있음
+Direct I/O의 경우에만 블록 입출력이 제한 되며  Buffered I/O는 제한되지 않음
+
+읽고 쓰기 초당 1mb로 제한 ( kb, mb, gb 단위로 설정 가능)
+docker run -it --device-write-bps /dev/xvda:1mb ubuntu:14.04
+[디바이스 이름] : [값] 형태로 설정  aws ec2에서 /dev/xvda 사용하고 있기 때문에 위의 예시 값에 쓰임
+
+아래 명령어는 10MB의 파일을 Direct I/O를 통해 쓰기 작업 수행
+dd if=/dev/zero of=test.out bs=1M count=10 oflag=direct
+
+설정 값을 상대 값으로 설정 가능 (2배 가량 차이나게 설정 예시)
+docker run -it --device-write-iops /dev/xvda:5 ubuntu:14.04
+docker run -it --device-write-iops /dev/xvda:10 ubuntu:14.04
 
