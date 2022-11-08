@@ -611,6 +611,44 @@ ubuntu:14.04
 rsyslog는 우분투에서 쓸 수 있는 기본적인 로깅 방법
 logentries, LogAnalyzer 등관 같은 로그 분석기와 연동 하여 로그 쉽게 분석 가능
 
+# fluented 로깅
+fluentd 각종 로그를 수집하고 저장할수 있는 기능을 제공 하는 오픈소스
+
+도커서버 1
+                    flutend 서버 (로그 수집) -> mongodb (로그 저장)
+도커서버 2 
+
+도커서버 : 192.168.0.100
+fluentd   : 192.168.0.101
+몽고DB   : 192.168.0.102
+
+docker run --name mongoDB -d -p 27017:27017 mongo
+
+fluent.conf  파일 작성
+<source>
+    @type forward
+</source>
+
+<match docker.**>
+    @type mongo
+    database nginx
+    collection access
+    host 192.168.0.102
+    port 27017
+    flush_interval 10s
+    # mongodb 인증 설정시 아래 항목 정보 추가 
+    # user userid
+    # password passwd
+</match>
+
+docker run -d --name fluented -p 24224:24224 \
+-v $(pwd)/fluent.conf:/fluentd/etc/fluent.conf \
+-e FLUENTD_CONF=fluent.conf alicek106/fluentd:mongo
+(공식 fluented mogodb client 설치 안되어 있음 )
+
+docker run -p 80:80 -d --log-driver=fluentd --log-opt fluentd-address=192.168.0.101:24224 \
+--log-opt tag=docker.nginx.webserver nginx
+
 
 
 
