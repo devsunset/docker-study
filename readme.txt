@@ -474,6 +474,68 @@ docker run -i -t -d --name network_container2 --net container:network_container1
 내부 IP를 새로 할당 받지 않으며 호스트에 veth로 시작하는 가상 네트워크 인터페이스도 생성되지 않음
 network_container2는 network_container1과 동일 
 
+# bridge 네트워크와 --net-alias
+브리지 타입의 네트워크와 run 명령어의 --net-alias 옵션을 함께 쓰면 특정 호스트 이름으로 컨테이너 여러 개에 접근 가능
+docker run -i -t -d --name network_alias_container1 --net mybridge --net-alias test ubuntu:14.04
+docker run -i -t -d --name network_alias_container2 --net mybridge --net-alias test ubuntu:14.04
+docker run -i -t -d --name network_alias_container3 --net mybridge --net-alias test ubuntu:14.04
+
+docker inspect network_alias_container1 | grep IPAddress
+docker inspect network_alias_container2 | grep IPAddress
+docker inspect network_alias_container3 | grep IPAddress
+
+docker run -i -t --name network_alias_ping --net mybridge ubuntu:14.04
+root@e5c86f31ec1d:/# ping -c 1 test
+PING test (172.18.0.4) 56(84) bytes of data.
+64 bytes from network_alias_container3.mybridge (172.18.0.4): icmp_seq=1 ttl=64 time=0.088 ms
+
+--- test ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.088/0.088/0.088/0.000 ms
+
+매번 달라지는 IP를 결정하는 것은 라운드 로빈 방식 
+
+root@e5c86f31ec1d:/#  apt-get update
+root@e5c86f31ec1d:/#  apt-get install dnsutils
+root@e5c86f31ec1d:/# dig test
+
+; <<>> DiG 9.9.5-3ubuntu0.19-Ubuntu <<>> test
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 39515
+;; flags: qr rd ra; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;test.				IN	A
+
+;; ANSWER SECTION:
+test.			600	IN	A	172.18.0.4
+test.			600	IN	A	172.18.0.2
+test.			600	IN	A	172.18.0.3
+
+;; Query time: 2 msec
+;; SERVER: 127.0.0.11#53(127.0.0.11)
+;; WHEN: Tue Nov 08 02:09:21 UTC 2022
+;; MSG SIZE  rcvd: 82
+
+# MacVLAN 네트워크 
+MacVLAN은 호스트의 네트워크 인터페이스 카드를 가상화해 물리 네트워크 환경을 컨테이너에게 동일하게 제공 
+MacVLAN을 사용하면 컨테이너는 물리 네트워크 상에서 가상의 Mac주소를 가지며 해당 넽워크에 연결된 다른 장치와의 통신이 가능
+기본적으로 할당되는 IP대역대인 172.17.X.X 대신 네트워크 장비의 IP를 할당 
+MacVLAN 네트워크를 사용하는 컨테이너는 기본적으로 호스트와 통신이 불가능
+적어도 1개의 네트워크 장비와 서버가 필요 
+
+공유기의 네트워크 정보 : 192.168.0.0/24
+서버 1 : 192.168.0.50
+서버 2 ; 192.168.0.51
+
+ 서버1 : docker network create -d macvlan --subnet=192.168.0.0/24 \
+--ip-range=192.168.0.64/28 --gateway=192.168.0.1 \
+-o macvlan_mode=bridge -o parent=eth0 my_macvlan
+
+ 서버2 : docker network create -d macvlan --subnet=192.168.0.0/24 \
+--ip-range=192.168.0.128/28 --gateway=192.168.0.1 \
+-o macvlan_mode=bridge -o parent=eth0 my_macvlan
 
 
 # 도커 로그 확인
