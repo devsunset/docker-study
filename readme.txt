@@ -542,6 +542,80 @@ MacVLAN 네트워크를 사용하는 컨테이너는 기본적으로 호스트�
 docker logs [OPTIONS] CONTAINER
 docker logs --tail 10 ${WORDPRESS_CONTAINER_ID}  
 
+docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=1234 mysql:5.7
+
+--since 옵션에 유닉스 시간을 입력해 특정 시간 이후 로그 확인
+ docker logs --since 1474765959 mysql
+
+ -t 옵션 타임 스탬프 표시 
+ -f 로그를 스트림으로 확인
+ docker logs -f -t mysql
+
+ 로그파일은 json형태로 저장됨
+ /var/lib/docker/containers/[container-id]/[container-id]-json.log
+
+ --logs-opt  옵션으로   json로그 파일의 최대 크기(k,m,g) 를 지정 가능
+  docker run -it --log-opt max-size=10k --log-opt max-file =3 --name log-test ubuntu:14.04
+  default는 용량 무제한 파일 1개 
+
+  기본은 json 로그로 처리 
+  syslog, journald,fluentd,awslogs 등 애플리케이의 특징에 적합한 로깅 선택 가능
+  도커 데몬 시작 옵션에서 --log-driver 옵션 사용 해서 설정 가능
+  DOCKER_OPTS="--logs-driver=syslog"
+
+  # syslog
+docker run -d --name syslog_container --log-driver=syslog ubuntu:14.04 echo syslogtest
+ubuntu -> /var/log/syslog
+centos -> /var/log/messages
+
+로그 확인
+tail /var/logs/syslog 
+
+syslog 원격에 저장하는 방법인 rsyslog 설정
+서버 호스트 : 192.168.0.100
+클라이언트  : 192.168.0.101
+
+서버 호스트에서 rsyslog서비스가 시작하도록 설정된 컨테이너를 구동 
+클라이언트에서 컨테이너 생성해 서버의 rsyslog 컨테이너에 로그를 저장 
+
+[서버 설정]
+docker run -i -t -h rsyslog --name rsyslog_server -p 514:514 -p 513:514/udp ubuntu:14.04
+컨테이너 내부의 rsyslog.conf 파일 내용 중 syslog서버를 구동시키는 항목의 주석을 해제 
+vi /etc/rsyslog/conf
+
+# provides UDP syslog reception
+$ModLoad imudp
+$UDPServerRun 514
+
+# provides TCP syslog reception
+$ModLoad imtcp
+$InputTCPServerRun 514
+
+서비스 재시작 
+service rsyslog restart
+
+[클라이언트 설정]
+docker run -i -t --log-driver=syslog --log-opt syslog-address=tcp://192.168.0.100:514 \
+--log-opt tag="mytag" ubuntu:14.04
+
+udp 활성화시 아래처럼 udp로도 설정 할 수 있음
+docker run -i -t --log-driver=syslog --log-opt syslog-address=udp://192.168.0.100:514 \
+--log-opt tag="mytag" ubuntu:14.04
+
+syslog-facility 설정시 로그 생성하는 주체에 따라 로그를 다르게 저장 가능
+기본은 daemon으로 설정되어 있지만 kern, user, mail 등 다른 facility를 사용 할 수 있음 
+docker run -i -t --log-driver=syslog --log-opt syslog-address=tcp://192.168.0.100:514 \
+--log-opt tag="maillog" --log-opt syslog-facility="mail"
+ubuntu:14.04
+
+rsyslog는 우분투에서 쓸 수 있는 기본적인 로깅 방법
+logentries, LogAnalyzer 등관 같은 로그 분석기와 연동 하여 로그 쉽게 분석 가능
+
+
+
+
+
+
 
 
 
