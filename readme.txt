@@ -716,3 +716,18 @@ dd if=/dev/zero of=test.out bs=1M count=10 oflag=direct
 docker run -it --device-write-iops /dev/xvda:5 ubuntu:14.04
 docker run -it --device-write-iops /dev/xvda:10 ubuntu:14.04
 
+# 도커 이미지 검색
+docker search image_name
+
+image name : [저장소 이름]/[이미지 이름]:[태그]   
+[저장소 이름] : 이미지가 저장된 장소 , 없으면 기본적으로 제공하는 이미지 저장소인 docker hub의 공식 이미지 , 생성할때 필수 항목이 아니므로 생략할수도 있음
+[이미지 이름] : 생략 불가 
+[태그] : 생략 가능 - 생략하면 도커 엔진은 이미지의 태그를 latest로 인식
+
+# 도커 이미지 목록 출력
+docker images [OPTIONS] [REPOSITORY[:TAG]]
+docker images
+
+# 도커 이미지 다운로드 
+docker pull image_name:latest
+ex) docker pull centos:latest
