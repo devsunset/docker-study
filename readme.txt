@@ -779,6 +779,8 @@ docker export -o rootFS.tar my_container
 docker import rootFS.tar myimage:0.0
 
 # 도커 이미지 배포 
+
+# Docker Hub
 도커 허브에 회원 가입 후 Create Repository 생성 
 
 docker run -i -t --name commit_container1 ubuntu:14.04
@@ -795,4 +797,10 @@ docker login
 docker push devsunset/my-image-name:0.0
 docker pull devsunset/my-image-name:0.0
 
+docker hub  조직/팀 생성하여 공유할 수 있음 (유료)
+
+Webhook 기능
+이미지  push 된 경우 특정 url 호출 기능 제공 
+
+# Docker 사설 레지스트리
 
