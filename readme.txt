@@ -964,6 +964,7 @@ CMD : 컨테이너가 시작될 때마다 실행할 명령어 설정 Dockerfile�
 docker build -t mybuild:0.0 ./
 -t 옵션 생성될 이미지 이름 설정 설정 안하면 16진수 형태의 이름으로 지정됨
 이미지 이름 다음에는 Dockerfile 저장된 위치 지정 
+-f 옵션으로 직접 Dockerfile을 지정 가능  
 
 docker run -d -P --name myserver mybuild:0.0
   -P 옵션은 Dockerfile에서 EXPOSE로 설정된 포트를 호스트의 포트와 연결되게 처리 해 줌 (동작이 잘 안되는지 연결이 안됨 -p 80:80으로 처리)
@@ -972,4 +973,67 @@ docker run -d -P --name myserver mybuild:0.0
 아래와 같이 filter 옵션을 사용하여 이미지 찾을 수 있음
   docker images --filter "label=purpose=practice"
 
+Dockerfile 파일 위치하는 곳이 build context 해당 경로에 있는 파일 및 디렉토리도 포함 됨으로 필요한 파일만 위치 시킴
+.dockerignore  (무시 하는 내용 작성 파일 경로는 Dockerfile이 위치하는 경로가 기준이 됨) 
+vi .dockerignore
+test2.html
+*.html
+*/*.html (디렉토리 하위의 파일 대상)
+test.htm? (html , htma  등 ? 값은 모든 값을 뜻함)
+!test*.html (! 값은 특정 파일을 제외하지 않음을 뜻함)
 
+Dockerfile파일이 한줄 실행 시마다 이전 Step에서 생성된 이미지에 의해 새로운 컨테이너가 생성 다 수행  된 후 새로운 이미지 레이어로 저장됨
+한번 이미지 빌드 후 재 실행하게 되면 이전 캐시 사용
+이미지 빌드 실패시 -t옵션의 값으로 지정한 이미지 이름이 아닌 <none>:<none>으로 이미지가 생성
+git clone 등으로 소스를 받아와서 빌드 하는 경우 git 내용이 변경이 되더라도 캐시를 사용하여 소스가 변경이 안됨
+--no-cache 옵션을 사용하여 캐시 사용안하게 지정
+docker build --no-cache -t mybuild:0.0
+특정 캐시를 사용해서 빌드 할 수도 있음
+docker build --cache-from nginx -t my_extend_nginx:0.0
+
+# 멀티 스테이지 빌드 
+하나의  Dockerfile 안에 여러 개의 FROM 이미지를 정의 함으로써 빌드 완료 시 최종적으로 생성될 이미지의 크기를 줄이는 역활
+
+아래 처럼 처리하면 간단한 프로그램 인데 go build시 필요한 라이브러리 참조로 생성되는 이미지 용량이 큼
+mkdir gobuid && cd gobuild
+
+vi main.go
+    package main
+    import "fmt"
+    func main(){
+        fmt.Println("hello world")
+    } 
+
+vi Dockerfile
+    FROM golang
+    ADD main.go /root
+    WORKDIR /root
+    RUN go build -o /root/mainApp /root/main.go
+    CMD ["./mainApp"]
+
+docker build . -t go_helloworld
+
+위와 동일한 처리나 멀티 스테이지 빌드로 경량화 처리 
+vi DockerfileLite
+    FROM golang
+    ADD main.go /root
+    WORKDIR /root
+    RUN go build -o /root/mainApp /root/main.go
+
+    FROM alpine:latest
+    WORKDIR /root
+    COPY --from=0 /root/mainApp .
+    CMD ["./mainApp"]
+
+COPY --from=0  첫번째  FROM 절에서 빌드된 이미지의 최종 상태를 의미
+alpine:latest는 실행에 필수적인 런타임 요소만 갖추고 있는 리눅스 배포판 
+
+아래 처럼 이미지 SIZE 값을 경량화 할수 있음
+ubuntu@ubuntu-2204:~/gobuild$ docker images
+REPOSITORY      TAG           IMAGE ID       CREATED         SIZE
+go_helloworld   multi-stage   8ef3b3ad3042   6 seconds ago   7.36MB
+go_helloworld   latest        f1a4fde6af8a   4 minutes ago   994MB
+
+FROM golang as builder  처럼  Alias 를 주면 
+여러개의 FROM 절 사용시 COPY --from=0 처럼 인덱스 값이 아닌 
+COPY --from=builder 형식으로 사용 할 수 도 있음
