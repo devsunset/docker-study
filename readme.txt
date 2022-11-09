@@ -814,18 +814,18 @@ curl localhost:5000/v2/  실행해서 설치 여부 확인
 
 docker tag my-image-name:0.0 ${DOCKER_HOST_IP}:5000/my-image-name:0.0
 
-docker tag my-image-name:0.0 127.0.0.1:5000/my-image-name:0.0
+docker tag my-image-name:0.0 192.168.0.100:5000/my-image-name:0.0
 
 ex)
- ubuntu@ubuntu2004:~$ docker push 127.0.0.1:5000/my-image-name:0.0
-The push refers to repository [127.0.0.1::5000/my-image-name]
-Get "https://127.0.0.1::5000/v2/": http: server gave HTTP response to HTTPS client
+ ubuntu@ubuntu2004:~$ docker push 192.168.0.100:5000/my-image-name:0.0
+The push refers to repository [192.168.0.100::5000/my-image-name]
+Get "https://192,168.0.100::5000/v2/": http: server gave HTTP response to HTTPS client
 
 기본적으로 도커 데몬은 HTTPS를 사용하지 않은 레지스트리 컨테이너에 접근 하지 못하도록 설정됨
 임시로 http를 사용하려면 아래 옵션을 사용하여 도커를 재시작
 DOCKER_OPTS="--insecure-registry=${DOCKER_HOST_IP}:5000"
 
-insecure-registry 설정
+insecure-registry 설정 (IP 값을 127.0.0.1 or localhost 를 사용 하면 기본적으로 insecure-registry 예외 적용됨)
 /etc/docker/daemon.json 파일을 열어 예시처럼 작성합니다. 없을 경우 생성하면 됩니다.
 {
     "insecure-registries" : ["${DOCKER_HOST_IP}:5000"]
@@ -842,4 +842,74 @@ docker pull 127.0.0.1:5000/my-image-name:0.0
 컨테이너 삭제 할때 볼륨에 이미지가 남기 때문에 --volumes 옵션 사용해 삭제 한다.
 docker rm --volumes myregistry
 
+# Nginx 서버로 접근 권한 설정
+인증서 생성
+mkdir certs
+openssl genrsa -out ./certs/ca.key 2048
+openssl req -x509 -new -key ./certs/ca.key -days 10000 -out ./certs/ca.crt
+openssl genrsa -out ./certs/domain.key 2048
+openssl req -new -key ./certs/domain.key -subj /CN=127.0.0.1 -out ./certs/domain.csr
+echo subjectAltName = IP:127.0.0.1 > extfile.cnf
+openssl x509 -req -in ./certs/domain.csr -CA ./certs/ca.crt -CAkey ./certs/ca.key -CAcreateserial -out ./certs/domain.crt -days 10000 -extfile extfile.cnf
 
+계정 패스워드 생성 ( htpasswd 설치 되어 있지 않으면 sudo apt-get install apache2-utils로 설치)
+htpasswd -c htpasswd devsunset
+mv htpasswd certs/
+
+vi certs/nginx.conf
+        upstream docker-registry {
+        server registry:5000;
+        }
+        server {
+        listen 443;
+        server_name ${DOCKER_HOST_IP};
+        ssl on;
+        ssl_certificate /etc/nginx/conf.d/domain.crt;
+        ssl_certificate_key /etc/nginx/conf.d/domain.key;
+        client_max_body_size 0;
+        chunked_transfer_encoding on;
+
+        location /v2/ {
+            if ($http_user_agent ~ "^(docker\/1\.(3|4|5(?!\.[0-9]-dev))|Go ).*$" ) {
+            return 404;
+            }
+            auth_basic "registry.localhost";
+            auth_basic_user_file /etc/nginx/conf.d/htpasswd;
+            add_header 'Docker-Distribution-Api-Version' 'registry/2.0' always;
+
+            proxy_pass http://docker-registry;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 900;
+        }
+        }
+
+docker stop myregistry; docker rm myregistry
+docker run -d --name myregistry --restart=always registry:2.6
+
+설정시 옵션 설정 가능
+docker run -d -p 5001:5000 --name registry_delete_enabled --restart=alwasy \
+-e REGISTRY_STORAGE_DELETE_ENABLED=true \
+-e REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/var/lib/mydocker \
+registry: 2.6
+
+-e 옵션을 주고 설정 하는 방식이 있고 설정 내용인 config.xml 파일 내용에 적용해도 됨
+docker exec -it myregistry cat /etc/docker/registry/config.yml
+
+docker run -d --name nginx_frontend -p 443:443 --link myregistry:registry -v $(pwd)/certs/:/etc/nginx/conf.d nginx:1.9
+
+docker login https://127.0.0.1
+
+인증서 문제 발생하는 경우 자체 생성한 인증서 임으로 신뢰할수 있는 인증서에 추가
+sudo cp certs/ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates
+
+ sudo service docker restart
+docker start nginx_frontend
+
+docker push 127.0.0.1/my-image-name:0.0
+
+도커 레지스트리 RESTful API (공식 문서 참조)
+ https://docs.docker.com/registry/spec/api/
