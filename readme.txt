@@ -3,6 +3,8 @@
 			# DOCKER-WORK #
 
 -------------------------------------------------
+
+########################################################
 # Docker
 
 https://www.docker.com/
@@ -12,7 +14,6 @@ https://docs.docker.com/
 https://hub.docker.com/
 
 https://kubernetes.io/
-
 
 ########################################################
 # Reference
@@ -25,6 +26,7 @@ https://subicura.com/2017/02/10/docker-guide-for-beginners-create-image-and-depl
 
 http://pyrasis.com/private/2014/11/30/publish-docker-for-the-really-impatient-book
 
+(시작하세요. 도커/쿠버네티스 book)
 https://github.com/alicek106/start-docker-kubernetes
 
 ########################################################
@@ -143,7 +145,7 @@ docker-compose up
 * 백그라운드에서 데몬으로 돌도록 하려면 -d 옵션
 
 ########################################################
-# Docker CMD
+# Docker Command
 
 docker 
 Usage:  docker [OPTIONS] COMMAND
