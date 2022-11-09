@@ -245,6 +245,16 @@ docker version
 # 도커 컨테이너 다운로드 및 실행 
 docker run ubuntu
 
+docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
+-d      detached mode 흔히 말하는 백그라운드 모드
+-p      호스트와 컨테이너의 포트를 연결 (포워딩)
+-v      호스트와 컨테이너의 디렉토리를 연결 (마운트)
+-e      컨테이너 내에서 사용할 환경변수 설정
+–name   컨테이너 이름 설정
+–rm     프로세스 종료시 컨테이너 자동 제거
+-it     -i와 -t를 동시에 사용한 것으로 터미널 입력을 위한 옵션
+–link   컨테이너 연결 [컨테이너명:별칭]
+
 docker run -it ubuntu bash
 -i 상호 입출력 옵션
 -t tty 활성화 
@@ -294,20 +304,11 @@ docker start mycentos
 # 내부로 진입 
 docker attach mycentos 
 
+# 도커 컨테이너 제어 
 docker start [OPTIONS] CONTAINER [CONTAINER...]
 docker restart [OPTIONS] CONTAINER [CONTAINER...]
 docker stop [OPTIONS] CONTAINER [CONTAINER...]
 docker attach [OPTIONS] CONTAINER [CONTAINER...]
-
-docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
--d      detached mode 흔히 말하는 백그라운드 모드
--p      호스트와 컨테이너의 포트를 연결 (포워딩)
--v      호스트와 컨테이너의 디렉토리를 연결 (마운트)
--e      컨테이너 내에서 사용할 환경변수 설정
-–name   컨테이너 이름 설정
-–rm     프로세스 종료시 컨테이너 자동 제거
--it     -i와 -t를 동시에 사용한 것으로 터미널 입력을 위한 옵션
-–link   컨테이너 연결 [컨테이너명:별칭]
 
 # 정지 되지 않은 컨테이너만 확인
 docker ps [OPTIONS]
@@ -351,7 +352,7 @@ apt-get upgrade
 apt-get install apache2 -y
 service  apache2 start
 
-# -p 컨테이너의 포트를 호스트의 포트와 바인딩해 연결하는 옵션 
+-p 컨테이너의 포트를 호스트의 포트와 바인딩해 연결하는 옵션 
 [호스트의 포트]:[컨테이너의 포트]
 여러개의 포트를 개방하려면 -p 옵션을 여러번 사용해서 설정
 docker run -i -t --name mywebserver -p 3306:3306 -p 80:80 ubuntu:14.04
@@ -586,14 +587,13 @@ syslog 원격에 저장하는 방법인 rsyslog 설정
 docker run -i -t -h rsyslog --name rsyslog_server -p 514:514 -p 513:514/udp ubuntu:14.04
 컨테이너 내부의 rsyslog.conf 파일 내용 중 syslog서버를 구동시키는 항목의 주석을 해제 
 vi /etc/rsyslog/conf
+    # provides UDP syslog reception
+    $ModLoad imudp
+    $UDPServerRun 514
 
-# provides UDP syslog reception
-$ModLoad imudp
-$UDPServerRun 514
-
-# provides TCP syslog reception
-$ModLoad imtcp
-$InputTCPServerRun 514
+    # provides TCP syslog reception
+    $ModLoad imtcp
+    $InputTCPServerRun 514
 
 서비스 재시작 
 service rsyslog restart
@@ -629,21 +629,21 @@ fluentd   : 192.168.0.101
 docker run --name mongoDB -d -p 27017:27017 mongo
 
 fluent.conf  파일 작성
-<source>
-    @type forward
-</source>
+    <source>
+        @type forward
+    </source>
 
-<match docker.**>
-    @type mongo
-    database nginx
-    collection access
-    host 192.168.0.102
-    port 27017
-    flush_interval 10s
-    # mongodb 인증 설정시 아래 항목 정보 추가 
-    # user userid
-    # password passwd
-</match>
+    <match docker.**>
+        @type mongo
+        database nginx
+        collection access
+        host 192.168.0.102
+        port 27017
+        flush_interval 10s
+        # mongodb 인증 설정시 아래 항목 정보 추가 
+        # user userid
+        # password passwd
+    </match>
 
 docker run -d --name fluented -p 24224:24224 \
 -v $(pwd)/fluent.conf:/fluentd/etc/fluent.conf \
@@ -1037,3 +1037,34 @@ go_helloworld   latest        f1a4fde6af8a   4 minutes ago   994MB
 FROM golang as builder  처럼  Alias 를 주면 
 여러개의 FROM 절 사용시 COPY --from=0 처럼 인덱스 값이 아닌 
 COPY --from=builder 형식으로 사용 할 수 도 있음
+
+# 기타 Dockerfile 명령어
+https://docs.docker.com/build/
+
+ENV : Dockerfile에서 사용될 환경 변수를 지정 ${ENV_NAME} 또는 $ENV_NAME 형태로 사용
+ex) 
+ENV test /home
+WORKDIR $test
+run 명령어 에서 -e 변수로 환경변수 설정시 기존의 값을 덮어 씀 (run 명령어 -e 옵션이 우선 순위)
+${env_name:-value} env_name라는 환경변수가 설정되어 있지 않으면 이 환경 변수의 값을 value로 대체
+$(env_name:-value) env_name라는 환경변수가 설정되어 있으면 이 환경 변수의 값을 value로 대체 없으면 공백으로 대체
+
+VOLUME : 빌드된 이미지로 컨테이너를 생성했을 때 호스트와 공유할 컨테이너 내부의 디렉토리를 설정
+JSON배열 형식으로 여러개 사용 가능 VOLUME /home/dir /home/dir2 형태로도 사용 가능
+ex)
+VOLUME /home/volume
+
+ARG : build 명령어를 실행할때 추가로 입력을 받아  Dockerfile 내에서 사용할 변수 값을 설정
+ex)
+ARG my_arg
+RUN touch ${my_arg}/mytouch
+
+dockr build --build-arg myarg=/home-t myarg:0.0 ./
+--build-arg 옵션에 키=값 형태로 설정
+값 설정 형태가 ENV 와 동일함으로  ARG에서 설정한 변수를 ENV에서 같은 이름으로 다시 설정하면 ENV값으로 덮어 쓰임
+
+USER : 컨테이너 내에서 사용될 사용자 계정이나 UID를 설정 그 아래 명령어는 해당 계정으로 진행됨
+일반적으로 RUN으로 사용자 그룹과 계정을 생성한뒤 사용 
+ex)
+RUN groupadd -r author && useradd -r -g author devsunset
+USER devsunset
