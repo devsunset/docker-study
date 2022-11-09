@@ -731,3 +731,32 @@ docker images
 # 도커 이미지 다운로드 
 docker pull image_name:latest
 ex) docker pull centos:latest
+
+# 도커 이미지 생성
+docker run -i -t --name commit_test ubuntu:14.04
+docker commit [OPTIONS] CANTAINER [REPOSITORY[:TAG]]
+docker commit -a "devsunset" -m "my first commit" commit_test commit_test:first
+-a : author 
+-m : commit messages
+docker run -i -t --name commit_test2 commit_test:first
+docker commit -a "devsunset" -m "my second commit" commit_test2 commit_test:second
+
+docker inspect ubuntu:14.04
+docker inspect commit_test:first
+docker inspect commit_test:second
+Layers 부분 확인하면 기존 바탕이 되는 Container에 commit 된 부분이 새로운 Layers로 추가 됨
+
+hisotry 내용 확인
+docker history commit_test:second
+
+# 도커 이미지 삭제 
+docker rmi 이미지 
+이미지를 사용한 컨테이너가 동작 중인 경우 삭제 가 안됨 컨테이너 중지 및 삭제 후 이미지 삭제 처리 
+컨테이너가 사용중인 이미지를 docker rmi -f 로 강제로 삭제하면 이미지의 이름이 <none>으로 변경되며 이러한 이미지를 댕글링(dangling) 이미지라 함
+댕글링 이미지는 docker 0mages -f dangling=true 명령어로 확인 가능
+docker image prune 명령어로 사용 중이지 않는 댕글링 이미지를 한번에 삭제 가능 
+
+ docker stop commit_test2 && docker rm commit_test2
+ docker rmi commit_test:first
+ Untagged: commit_test:first <- Untagged 의미는 commit_test:second에 사용되므로 실제 이미지를 삭제 하지 안혹 레이어에 부여된 이름만 삭제 함 
+
