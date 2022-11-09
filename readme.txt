@@ -804,3 +804,42 @@ Webhook 기능
 
 # Docker 사설 레지스트리
 
+도커 공식 이미지 제공
+ docker run -d --name myregistry -p 5000:5000 --restart=always registry:2.6
+ --restart 옵션은 호스트나 도커 엔진을 재시작시 컨테이너도 항상 재시작 
+ on-failure  -> on-failure:5 컨테이너 종료코드가 0이 아닐때 컨테이너 재시작을 5번까지 시도 
+ unless-stopped  -> 컨테이너를 stop으로 종료 했으면 호스트나 도커엔진이 재시작해도 컨테이너 재시작 안함
+
+curl localhost:5000/v2/  실행해서 설치 여부 확인
+
+docker tag my-image-name:0.0 ${DOCKER_HOST_IP}:5000/my-image-name:0.0
+
+docker tag my-image-name:0.0 127.0.0.1:5000/my-image-name:0.0
+
+ex)
+ ubuntu@ubuntu2004:~$ docker push 127.0.0.1:5000/my-image-name:0.0
+The push refers to repository [127.0.0.1::5000/my-image-name]
+Get "https://127.0.0.1::5000/v2/": http: server gave HTTP response to HTTPS client
+
+기본적으로 도커 데몬은 HTTPS를 사용하지 않은 레지스트리 컨테이너에 접근 하지 못하도록 설정됨
+임시로 http를 사용하려면 아래 옵션을 사용하여 도커를 재시작
+DOCKER_OPTS="--insecure-registry=${DOCKER_HOST_IP}:5000"
+
+insecure-registry 설정
+/etc/docker/daemon.json 파일을 열어 예시처럼 작성합니다. 없을 경우 생성하면 됩니다.
+{
+    "insecure-registries" : ["${DOCKER_HOST_IP}:5000"]
+}
+
+docker 재시작
+# flush changes
+sudo systemctl daemon-reload
+# restart docker
+sudo systemctl restart docker
+
+docker pull 127.0.0.1:5000/my-image-name:0.0
+
+컨테이너 삭제 할때 볼륨에 이미지가 남기 때문에 --volumes 옵션 사용해 삭제 한다.
+docker rm --volumes myregistry
+
+
