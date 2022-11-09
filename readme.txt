@@ -804,7 +804,7 @@ Webhook 기능
 
 # Docker 사설 레지스트리
 
-도커 공식 이미지 제공
+도커 공식 사설 레지스트리 이미지 제공
  docker run -d --name myregistry -p 5000:5000 --restart=always registry:2.6
  --restart 옵션은 호스트나 도커 엔진을 재시작시 컨테이너도 항상 재시작 
  on-failure  -> on-failure:5 컨테이너 종료코드가 0이 아닐때 컨테이너 재시작을 5번까지 시도 
@@ -911,5 +911,5 @@ docker start nginx_frontend
 
 docker push 127.0.0.1/my-image-name:0.0
 
-도커 레지스트리 RESTful API (공식 문서 참조)
+# 도커 레지스트리 RESTful API (공식 문서 참조)
  https://docs.docker.com/registry/spec/api/
