@@ -915,3 +915,61 @@ docker push 127.0.0.1/my-image-name:0.0
 
 # 도커 레지스트리 RESTful API (공식 문서 참조)
  https://docs.docker.com/registry/spec/api/
+
+
+# Dockerfile
+
+이미지 생성하는 방법
+1. empty(ubuntu, CentOS) image로 컨테이너 생성
+2.애플리케이션 환경 설치 구동
+3.컨테이너를 이미지로 커밋 
+위의 방법은 수작업으로 진행 필요
+
+Dockerfile 위와 같은 일련의 작업을 하나의 파일에 기술 하고 build 하여 한번에 수행되게 처리 
+Dockerfile을 Docker Hub에 배포 할수도 있음
+
+# Dockerfile EXAMPLE
+mkdir dockerfile && cd dockerfile
+echo test >> test.html
+
+vi Dockerfile
+###
+    FROM ubuntu:14.04
+    MAINTAINER devsunset
+    LABEL "purpose"="practice"
+    RUN apt-get update
+    RUN apt-get install apache2 -y
+    ADD test.html /var/www/html
+    WORKDIR /var/www/html
+    RUN ["/bin/bash", "-c", "echo hello >> test2.html"]
+    EXPOSE 80
+    CMD apachectl -DFOREGROUND
+###
+
+# Dockerfile 명령어 
+FROM : 생성할 이미지의 베이스가 될 이미지 ( 반드시 한번 이상 입력해야 함)
+MAINTAINER : 이미지를 생성한 개발자의 정보 (일반적으로 이메일등 입력 도커 1.13.0 버젼 이후로 사용 하지 않음 대신 LABEL로 대체 )
+                        LABEL maintainer "devsunset <devsunset@gmail.com>"
+LABEL : 이미지에 메타 데이타 추가 메타 데이터는 키:값 형태로 저장 여려개의 메타데이타가 저장 될수 있음
+RUN : 이미지를 만들기 위해 컨테이너 내부에서 명령어를 실행 (명령어 실행시 입력을 받아야 하는경우 미리 설정 안그러면 오류로 간주 됨)
+          RUN ["/bin/bash", "-c", "echo hello >> test2.html"] 일부 명령어는 배열 형태로 사용 할수 있음 
+ADD : 파일을 이미지에 추가 , 추가 하는 파일은 Dockfiler이 위치한 디렉토리인 Context 에서 가져옴
+          ADD 명령어는 JSON 형태로 ["추가할 파일1", "추가할 파일2","컨텐이너에 추가될 위치"] 형식으로 여러개 파일 처리 가능 
+WORKDIR  : 명령어를 실행할 디렉토리 ( cd 와 비슷함 )
+EXPOSE : Dockfile 빌드로 생성된 이미지에서 노출할 포트 설정 (호스트 포트와 바인딩 되는건 아님)
+CMD : 컨테이너가 시작될 때마다 실행할 명령어 설정 Dockerfile에서 한번만 사용 가능 CMD로 설정한 값이 run의 커맨드를 덮어씀 
+            JSON 배열 형태로 설정 가능
+
+# Dockerfile 빌드 
+docker build -t mybuild:0.0 ./
+-t 옵션 생성될 이미지 이름 설정 설정 안하면 16진수 형태의 이름으로 지정됨
+이미지 이름 다음에는 Dockerfile 저장된 위치 지정 
+
+docker run -d -P --name myserver mybuild:0.0
+  -P 옵션은 Dockerfile에서 EXPOSE로 설정된 포트를 호스트의 포트와 연결되게 처리 해 줌 (동작이 잘 안되는지 연결이 안됨 -p 80:80으로 처리)
+  docker port myserver 로 확인
+
+아래와 같이 filter 옵션을 사용하여 이미지 찾을 수 있음
+  docker images --filter "label=purpose=practice"
+
+
