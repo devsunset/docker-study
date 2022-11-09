@@ -755,10 +755,44 @@ docker history commit_test:second
 docker rmi 이미지 
 이미지를 사용한 컨테이너가 동작 중인 경우 삭제 가 안됨 컨테이너 중지 및 삭제 후 이미지 삭제 처리 
 컨테이너가 사용중인 이미지를 docker rmi -f 로 강제로 삭제하면 이미지의 이름이 <none>으로 변경되며 이러한 이미지를 댕글링(dangling) 이미지라 함
-댕글링 이미지는 docker 0mages -f dangling=true 명령어로 확인 가능
+댕글링 이미지는 docker images -f dangling=true 명령어로 확인 가능
 docker image prune 명령어로 사용 중이지 않는 댕글링 이미지를 한번에 삭제 가능 
 
  docker stop commit_test2 && docker rm commit_test2
  docker rmi commit_test:first
  Untagged: commit_test:first <- Untagged 의미는 commit_test:second에 사용되므로 실제 이미지를 삭제 하지 안혹 레이어에 부여된 이름만 삭제 함 
+
+# 도커 이미지 추출
+docker save -o ubuntu_14_04.tar ubuntu:14.04
+open .docker_temp_678847958: permission denied ( permission 에러 발생하면 아래 와 같이 실행)
+
+mkdir ~/docker-images
+cd ~/docker-images
+chmod 777 ./
+sudo docker save <img_id> -o ./<filename>
+
+추출한 이미지 로드 
+sudo docker load -i ubuntu_14_04.tar
+
+컨테이너 export 후 이미지로 import
+docker export -o rootFS.tar my_container
+docker import rootFS.tar myimage:0.0
+
+# 도커 이미지 배포 
+도커 허브에 회원 가입 후 Create Repository 생성 
+
+docker run -i -t --name commit_container1 ubuntu:14.04
+
+docker commit commit_container1 my-image-name:0.0
+
+특정 이름의 저장소에 이미지를 올리려면 저장소 이름을 이미지 앞에 접두어로 추가 해야 함
+docker tag [기존의 이미지 이름] [새롭게 생성될 이미지 이름]
+docker tag my-image-name:0.0 devsunset/my-image-name:0.0
+
+docker hub에 로그인 
+docker login
+(로그인 한 정보는 /[게정명]/.docker/config.json 파일에 저장됨 삭제 하려면 docker logout 명령어 실행 - 경로는 설치 버젼 따라 상이한듯 함)
+docker push devsunset/my-image-name:0.0
+docker pull devsunset/my-image-name:0.0
+
 
