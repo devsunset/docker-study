@@ -233,7 +233,11 @@ docker-compose up
 ########################################################
 ### Docker Guide
 
+(시작하세요 도커/쿠버네티스 (개정판) 요약정리)
 https://github.com/alicek106/start-docker-kubernetes
+
+############################
+## 도커 엔진
 
 # 도커 정보 확인
 docker info
@@ -1342,13 +1346,103 @@ Storage Driver: overlay2
 dockerd --storage-driver=devicemapper 
 
 /var/lib/docker/devicemapper 에 저장됨  aufs로 설정시는 /var/lib/docker/aufs에 저장
+별도로 디렉토리 지정 하지 않으면 /var/lib/docker/{드라이버 이름} 경로에 저장됨
 서로 다른 저장소에 저장된 이미지는 서로 호환 사용이 안됨
+--data-root  옵션으로 경로 지정 가능
+dockerd --data-root /DATA/docker 
+여러개의 디바이스 드라이버의 디렉토리가 하나의 디렉토리에 존재할 경우 --storage-driver 옵션으로 사용할 드라이버를
+명시 하지 않으면 도커 데몬이 실행시 에러 발생 
 
-Redhat 계열은 OVerlayFS  안정성을 우선시 한다면 Btrfs
+Redhat 계열은 OVerlayFS  안정성을 우선시 한다면 Btrfs 상황에 따라 결정해서 사용 
 https://docs.docker.com/engine/userguide/storagedriver/selectadriver/#/which-storage-drive=should-you-choose
 
+# AUFS
+데비안 계열에서 기본으로 사용 도커에서 오랜 기간 사용해 왔기 때문에 안정성 측면에서 우수 
+기본적으로 커널에 포함되어 있지 않기 때문에 일부 운영체제에서는 사용 불가 ( RHEL, CentOS)
+grep aufs /proc/filesystems ( 사용 가능 한지 확인 법)
+nodev aufs 
+
+DOCKER_OPTS="--stograge-driver=aufs"
+
+컨테이너 실행, 삭제 등의 컨테이너 관련 수행 작업이 매우 빠름 PaaS에 적합 
+
+# Devicemapper
+레드햇 계열의 리눅스 배포판을 위해 개발된 스토리지 드라이버 
+성능상의 이유로 deprecated된 드라이버 호스트의 커널 버젼이 낮거나 여러 스토리지 드라이버를 사용 할 수 없는 경우가
+아니라면 overlay 또는 overlay2 스토리지로 사용하는게 좋음 
+
+DOCKER_OPTS="--stograge-driver=devicemapper"
+
+# OverlayFS 
+레드햇 계열 및 라즈비안 , 우분투 등 대부분의 운영체제에서 도커를 설치 하면 자동으로 사용되도록 설정 되는 드라이버 
+overlay 커널 3.18 버전 이상
+overlay2 커널 4.0 버전 이상
+
+DOCKER_OPTS="--stograge-driver=overlay"
+
+#Btrfs
+SSD 최적화 , 데이터 압축 등 다양한 기능 제공  파일 시스템을 별도로 구성 하지 않으면 도커에서 사용 불가 
+/var/lib/docker 디렉토리가 btrfs파일 시스템을 사용하는 공간에 마운트 되어 있어야 도커는 Btrfs를 스토리지 드라이버로 인식
+
+설정
+1. service docker stop
+2. apt-get install btrfs-tools
+3. mkfs .btrfs -f /dev/xvdb
+4. vi /etc/fstab (시스템이 재부팅 될때 자동으로 마운트 설정 )
+    /dev/xvdb /var/lib/docker btrfs defaults 0 0 
+5. mount -a  
+    mount
+6. service docker start
+    docker info | grep Storage
+    Storage Driver : btrfs 
+
+# ZFS
+ZFS 썬 마이크로시스템즈에서 개발 Btrfs 처럼 압축 , 레플리카 , 데이터 중복 제거등 다양한 기능 제공
+라이선스 문제로 리눅스 커널에 기본 탑재 되어 있지 않음
+무거운 파일 시스템 호스트의 자원 사용량을 수시로 체크 필요 
+
+설정
+1. service docker stop
+2. apt install zfsutils-linux
+3. modprobe zfs
+4. zpool create -f zpool-docker /dev/xvdb
+5. zfs create -o mountpoint=/var/lib/docker zpool-docker/docker
+6.zfs list -t all
+   /var/lib/docker 디렉토리가 ZFS를 사용 하고 있으면 사용할 준비가 된 것 
+   참조 하고 있지 않다면 DOCKER_OPTS="--storage-driver=zfs" 설정 
+7. service docker start
+  docker info | grep Driver
+  Storage Driver ; zfs
+
+# 컨테이너 저장 공간 설정
+AUFS , overlay2 등의 스토리지 사용 하고 있다면 컨테이너의 저장공간은 호스트의 저장공간 크기를 공유 
+스토리지 드라이버에 상관없이 컨테이너의 저장 공간을 제한 하는 기능을 도커 엔진에서 자체적으로 제공하고 있지 않음
+devicemapper, overlay2등 일부 스토리지에 한해서 저장 공간을 제한 하는 것이 가능 
+
+# devicemapper 컨테이너 저장 공간 설정
+DOCKER_OPTS=".... --storage-driver=devicemapper --storage-opt dm.basesize20G .... "
+dm.basesize 옵션의 값은 도커 엔진이 이미지를 내려 받을때 이미지 자체의 옵션으로 내장시키기 때문에 
+도커 데몬의 dm.basesize옵션을 변경해도 기존에 사용하던 설정을 가진 이미지가 존재한다면 컨테이너의 파일 시스템 크기는 변하지 않음
+따라서 도커에 초기 상태로 초기화 한뒤 사용해야만 정상적으로 적용
+
+--storage-opt  옵션으로 컨테이너 생성시 옵션을 줄수 있으나 해당 값은 dm.basesize 갑보다 커야 함
+docker run -it --storage-opt size=25G centos:7
+
+# overlay2 컨테이너 저장 공간 설정
+디스크가  xfs 파일 시스템일 경우 project quota 라는 기능을 이용해 컨테이너 저장 공간 제한 할 수 있음 
+xfs 파일 시스템을 /mnt/xfs로 마운트 되었다고 가정시 아래 처럼 설정 
+DOCKER_OPTS=".... --storage-driver=overlay2 --data-root /mnt/xfs .... "
+
+컨테이너 생성시 --storage-opt 옵션을 통해 저장 공간 제한 할수 있음
+docker run -it --storage-opt size=1G centos:7 
 
 
+############################
+## 도커 스윔
+
+
+############################
+## 도커 컴포즈 
 
 
 
