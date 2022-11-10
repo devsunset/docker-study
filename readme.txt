@@ -1436,6 +1436,60 @@ DOCKER_OPTS=".... --storage-driver=overlay2 --data-root /mnt/xfs .... "
 컨테이너 생성시 --storage-opt 옵션을 통해 저장 공간 제한 할수 있음
 docker run -it --storage-opt size=1G centos:7 
 
+# 도커 데몬 모니터링 
+
+도커 데몬 디버그 모드 
+dockerd -D 
+
+로그 확인 
+journalctl -u docker
+
+# events
+docker events
+docker system events
+도커 client 에서 입력하는 모든 정보가 출력되는 건 아님
+attach , commit , copy , create 등의 컨테이너 관련 명령어 delete , import , load, pull, push 등의 이미지 관련 명령어 , 볼륨, 네트워크 관련 명령어 출력
+--filter type 옵션으로 원하는 결과만 보기 (container, image, volume, network, plugin, daemon)
+docker events --filter 'type=image'
+https://docs.docker.com/engine/reference/commandline/events/
+
+# stats
+docker stats 
+실행 중인 모든 컨테이너의 자원 사용량을 스트림으로 출력 
+기본으로 스트림 형식으로 출력 한번만 출력 하게 하고 싶다면 --no-stream 옵션 사용
+docker stats --no-stream
+
+# system df
+도커에서 사용하고 있는 이미지 , 컨테이너, 로컬 볼륨의 총 개수 및 사용주인 개수, 크기 , 삭제 함으로써 확보 가능한 공간을 출력
+docker system df
+사용 하지 않는 컨테이너와 볼륨은 docker container prune , docker volume prune로 한번에 삭제 가능 
+docker image prune는 댕글링<none>:<none> 이미지 삭제 처리 
+
+# CAdvisor
+구글이 만든 컨테이너 모니터링 도구 , 컨테이너별 실시간 자원 사용량 및 도커 모니터링 정보 등을 시각화 해서 표시 
+단일 도커 호스트만 모니터링 가능
+docker run \
+--volume=/:/rootfs:ro \
+--volume=/var/run:/var/run:ro \
+--volume=/sys:/sys:ro \
+--volume=/var/lib/docker/:/var/lib/docker:ro \
+--volume=/dev/disk:/dev/disk:ro \
+--publish=8080:8080 \
+--detach=true \
+--name=cadvisor \
+gcr.io/cadvisor/cadvisor:v0.46.0
+
+# 파이썬 Remote API 라이브러리를 이용한 도커 사용
+python 리눅스에 기본으로 설치 되어 있음 - python docker 라이브러리 설치 후 python 소스로 docker  제어 처리 
+apt-get install python3-pip -y
+pip3 install docker
+
+vi run_nginx_container.py
+    import docker
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+    container = client.containers.run('nginx', detach=True, ports={'80/tcp':80})
+    print("Created container is : {}, {}".format(container.name, container.id))
+
 
 ############################
 ## 도커 스윔
