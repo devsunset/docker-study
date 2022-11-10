@@ -1139,3 +1139,216 @@ CMD ["echo", "test"]
 빌드 캐시 사용
 한줄 실행시 마다 이미지가 생성됨으로 RUN  명령어 실행시 && 조합으로 한번에 실행  
 
+# 도커 데몬
+
+# 도커의 구조
+docker server , docker client
+which docker
+ps aux | grep docker
+/var/run/docker.sock
+
+1.사용자가 docker version 실행
+2./usr/bin/docker는 /var/run/docker.sock 유닉스 소켓을 사용해 도커 데몬에게 명령어 전달
+3.도커 데몬은 명령어 파싱하고 명령어에 해당 하는 작업 수행
+4.수행 결과를 도커 클라이언트에 반환 하고 사용자에게 결과 출력
+
+# 도커 데몬 실행
+service docker start
+service docker stop
+레드햇 개열은 systemctl enable docker 로 서비스 활성화 
+dockerd ( 직접 실행 )
+
+# 도커 데몬 설정
+ubuntu@ubuntu-2204:~$ dockerd --help
+
+Usage:	dockerd [OPTIONS]
+
+A self-sufficient runtime for containers.
+
+Options:
+      --add-runtime runtime                     Register an additional OCI compatible runtime (default [])
+      --allow-nondistributable-artifacts list   Allow push of nondistributable artifacts to registry
+      --api-cors-header string                  Set CORS headers in the Engine API
+      --authorization-plugin list               Authorization plugins to load
+      --bip string                              Specify network bridge IP
+  -b, --bridge string                           Attach containers to a network bridge
+      --cgroup-parent string                    Set parent cgroup for all containers
+      --config-file string                      Daemon configuration file (default "/etc/docker/daemon.json")
+      --containerd string                       containerd grpc address
+      --containerd-namespace string             Containerd namespace to use (default "moby")
+      --containerd-plugins-namespace string     Containerd namespace to use for plugins (default "plugins.moby")
+      --cpu-rt-period int                       Limit the CPU real-time period in microseconds for the parent cgroup for all
+                                                containers
+      --cpu-rt-runtime int                      Limit the CPU real-time runtime in microseconds for the parent cgroup for all
+                                                containers
+      --cri-containerd                          start containerd with cri
+      --data-root string                        Root directory of persistent Docker state (default "/var/lib/docker")
+  -D, --debug                                   Enable debug mode
+      --default-address-pool pool-options       Default address pools for node specific local networks
+      --default-cgroupns-mode string            Default mode for containers cgroup namespace ("host" | "private") (default "private")
+      --default-gateway ip                      Container default gateway IPv4 address
+      --default-gateway-v6 ip                   Container default gateway IPv6 address
+      --default-ipc-mode string                 Default mode for containers ipc ("shareable" | "private") (default "private")
+      --default-runtime string                  Default OCI runtime for containers (default "runc")
+      --default-shm-size bytes                  Default shm size for containers (default 64MiB)
+      --default-ulimit ulimit                   Default ulimits for containers (default [])
+      --dns list                                DNS server to use
+      --dns-opt list                            DNS options to use
+      --dns-search list                         DNS search domains to use
+      --exec-opt list                           Runtime execution options
+      --exec-root string                        Root directory for execution state files (default "/var/run/docker")
+      --experimental                            Enable experimental features
+      --fixed-cidr string                       IPv4 subnet for fixed IPs
+      --fixed-cidr-v6 string                    IPv6 subnet for fixed IPs
+  -G, --group string                            Group for the unix socket (default "docker")
+      --help                                    Print usage
+  -H, --host list                               Daemon socket(s) to connect to
+      --host-gateway-ip ip                      IP address that the special 'host-gateway' string in --add-host resolves to.
+                                                Defaults to the IP address of the default bridge
+      --icc                                     Enable inter-container communication (default true)
+      --init                                    Run an init in the container to forward signals and reap processes
+      --init-path string                        Path to the docker-init binary
+      --insecure-registry list                  Enable insecure registry communication
+      --ip ip                                   Default IP when binding container ports (default 0.0.0.0)
+      --ip-forward                              Enable net.ipv4.ip_forward (default true)
+      --ip-masq                                 Enable IP masquerading (default true)
+      --ip6tables                               Enable addition of ip6tables rules
+      --iptables                                Enable addition of iptables rules (default true)
+      --ipv6                                    Enable IPv6 networking
+      --label list                              Set key=value labels to the daemon
+      --live-restore                            Enable live restore of docker when containers are still running
+      --log-driver string                       Default driver for container logs (default "json-file")
+  -l, --log-level string                        Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
+      --log-opt map                             Default log driver options for containers (default map[])
+      --max-concurrent-downloads int            Set the max concurrent downloads for each pull (default 3)
+      --max-concurrent-uploads int              Set the max concurrent uploads for each push (default 5)
+      --max-download-attempts int               Set the max download attempts for each pull (default 5)
+      --metrics-addr string                     Set default address and port to serve the metrics api on
+      --mtu int                                 Set the containers network MTU
+      --network-control-plane-mtu int           Network Control plane MTU (default 1500)
+      --no-new-privileges                       Set no-new-privileges by default for new containers
+      --node-generic-resource list              Advertise user-defined resource
+      --oom-score-adjust int                    Set the oom_score_adj for the daemon
+  -p, --pidfile string                          Path to use for daemon PID file (default "/var/run/docker.pid")
+      --raw-logs                                Full timestamps without ANSI coloring
+      --registry-mirror list                    Preferred Docker registry mirror
+      --rootless                                Enable rootless mode; typically used with RootlessKit
+      --seccomp-profile string                  Path to seccomp profile
+      --selinux-enabled                         Enable selinux support
+      --shutdown-timeout int                    Set the default shutdown timeout (default 15)
+  -s, --storage-driver string                   Storage driver to use
+      --storage-opt list                        Storage driver options
+      --swarm-default-advertise-addr string     Set default address or interface for swarm advertised address
+      --tls                                     Use TLS; implied by --tlsverify
+      --tlscacert string                        Trust certs signed only by this CA (default "/home/ubuntu/.docker/ca.pem")
+      --tlscert string                          Path to TLS certificate file (default "/home/ubuntu/.docker/cert.pem")
+      --tlskey string                           Path to TLS key file (default "/home/ubuntu/.docker/key.pem")
+      --tlsverify                               Use TLS and verify the remote
+      --userland-proxy                          Use userland proxy for loopback traffic (default true)
+      --userland-proxy-path string              Path to the userland proxy binary
+      --userns-remap string                     User/Group setting for user namespaces
+  -v, --version                                 Print version information and quit
+
+아래 처럼 dockerd 실행시 직접 옵션을 설정 할 수 도 있음  service로 데몬 구동시 해당 옵션은 적용 안됨
+dockerd -H tcp://0.0.0.0:2375 --insecure-registry=DOCKER_HOST_IP:5000 --tls=false
+
+ service로 데몬 구동시는 /etc/default/docker라는 파일을 읽어 옵션이 적용됨
+vi /etc/default/docker
+DOCKER_OPTS="dockerd -H tcp://0.0.0.0:2375 --insecure-registry=DOCKER_HOST_IP:5000 --tls=false"
+
+# 도커 데몬 제어
+-H : IP 주소와 포트번호를 입력하면 원격 API인 Docker Remote API로 도커를 제어
+
+호스트의 모든 네트워크 인터페이스 카드에 할당된 IP 주소와 2375번 포트로 도커 데몬을 제어 함과 동시에 클라이언트도 사용할 수 있는 예시 
+dockerd -H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375
+
+dockerd -H tcp://192.168.99.100:2375
+curl 192.168.99.100:2375/version --silent | python -m json.tool
+
+# 도커 데몬에 보안 적용 --tlsverify
+
+docker daemon
+ca.pem , server-cert.pem , server-key.pem
+
+docker client
+ca.pem , cert.pem , key.pem
+
+# server
+mkdir keys && cd keys
+1. 인증서에 사용될  key 생성
+openssl genrsa -aes256 -out ca-key.pem 4096
+2. 공용 키 생성
+openssl req -new -x509 -days 10000 -key ca-key.pem -sha256 -out ca.pem
+3. 서버 측에서 사용할 key 생성
+openssl genrsa -out server-key.pem 4096
+4. 서버측에서 사용될 인증서를 위한 인증 요청서 파일 생성
+openssl req -subj "/CN=$HOST" -sha256 -new -key server-key.pem -out server.csr
+5.접속에 사용될 IP 주소를 extfile.cnf 파일로 저장
+echo subjectAltName = IP:$HOST, IP:127.0.0.1 > extfile.cnf
+6. 서버측의 인증서 파일 생성
+openssl x509 -req -days 365 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile extfile.cnf
+
+# client
+1. 클라이언트 측의 키파일과 인증요청 파일을 생성하고 extfile.conf 파일에 extendedKeyUsage 항목 추가
+openssl genrsa -out key.pem 4096
+openssl req -subj 'CN=client' -new -key key.pem -out client.csr
+echo extendedKeyUsage = clientAuth > extfile.cnf
+2. 클라이언트 측의 인증서를 생성
+openssl x509 -req -days 30000 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out cert.pem -extfile extfile.cnf
+3. ls (아래 파일 생성 확인)
+ca-key.pem  , ca.pem , ca.srl , cert.pem , client.csr , extfile.cnf , key.pem , server-cert.pem , server.csr , server-key.pem 
+4. 파일의 쓰기 권한을 삭제 해 읽기 전용 파일로 처리 
+chmod -v 0400 ca-key.pem key.pem server-key.pem ca.pem server-cert.pem cert.pem
+5. 도커 데몬의 설정파일이 존재하는 디렉토리인 ~/.docker로 도커 데몬 측에서 필요한 파일을 이동 
+cp {ca,server-cert,server-key,cert,key}.pem ~/.docker
+
+# 보안 적용 
+dockerd --tlsverify \
+--tlscacert=/root/.docker/ca.pem \
+--tlscert=/root/.docker/server-cert.pem \
+--tlskey=/root/.docker/server-key.pem \
+-H=0.0.0.0:2376 \
+-H unix:///var/run/docker.sock
+
+관례적으로 Remote API 포트는 보안이 적용 안되어 있으면 2375 적용되어 있다면 2376을 사용 
+
+docker -H 192.168.99.100:2376/version 
+명령어 실행시 TLS 보안이 설정 되지 않았다는 에러가 출력됨
+
+아래 처럼 보안 연결 원격 제어
+docker -H 192.168.99.100:2376 \
+--tlscacert=/root/.docker/ca.pem \
+--tlscert=/root/.docker/cert.pem \
+--tlskey=/root/.docker/key.pem \
+--tlsverify version 
+
+매번 옵션 입력 하기 불편 (아래 처럼 환경 변수로 설정) ~./bashrc 등에 설정
+export DOCKER_CERT_PATH="/root/.docker"
+export DOCKER_TLS_VERIFY=1
+
+docker -H 192.168.99.100:2376 version
+
+curl로 보안이 적용된 도커 데몬의 Remote API 사용 하려면 아래와 같이 플래그를 추가 
+curl https://192.168.99.100:2376/version \
+--cert ~/.docker/cert.pem \
+--key ~/.docker/key.pem \
+--cacert ~/.docker/ca.pem
+
+# 도커 스토리지 드라이버 변경 --storage-driver (실행 환경에 따라 자동으로 설정 되지만 해당 옵션으로 변경 할 수 있음)
+docker info | grep "Storage Driver"
+Storage Driver: overlay2
+
+지원하는 드라이버 : OverlayFS, AUFS , Btrfs, Devicemapper, VFS, ZFS
+dockerd --storage-driver=devicemapper 
+
+/var/lib/docker/devicemapper 에 저장됨  aufs로 설정시는 /var/lib/docker/aufs에 저장
+서로 다른 저장소에 저장된 이미지는 서로 호환 사용이 안됨
+
+Redhat 계열은 OVerlayFS  안정성을 우선시 한다면 Btrfs
+https://docs.docker.com/engine/userguide/storagedriver/selectadriver/#/which-storage-drive=should-you-choose
+
+
+
+
+
+
