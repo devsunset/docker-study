@@ -1494,6 +1494,24 @@ vi run_nginx_container.py
 ############################
 ## 도커 스윔
 
+여러 대의  서버에 설치된 docker를  하나의 자원 Pool로 관리 
+별도의 설치 과정 없이 도커 자체에 내장 되어 있음
+
+# 스윔 모드 
+docker info | grep Swarm
+    Swarm: inactive 
+
+서버 클러스트링 할때는 반드시 각 서버의 시각을 NTP 툴을 이용해 동기화 처리 해야 함
+
+# 도커 스윔 모드의 구조 
+Manage Node , Worker Node 구성
+Worker Node는 실제로 컨테이너가 생성 되고 관리 됨
+Manage  Node는 Worker Node를 관리 하기 위한 도커 서버 (Manage Node에 컨테이너 생성 가능 - 기본저긍로 Worker  Node의 역활을 포함)
+Manage Node 는 1개 이상 Worker Node 는 없을 수도 있음 (운영은 스윔 클러스터가 유지 될수 있도록  Manage 다중와 - 다중화 한다고 해서 성능 향상은 안됨)
+Manage Node 가 절반 이상의 장애가 발생 하여 정상적으로 작동 하지 않을 경우 장애가 생긴 Manage Node가 복구 될때까지 클러스터 운영을 중단 (가능한 홀수 갯수로 구성 )
+
+
+
 
 ############################
 ## 도커 컴포즈 
