@@ -1039,7 +1039,7 @@ FROM golang as builder  처럼  Alias 를 주면
 COPY --from=builder 형식으로 사용 할 수 도 있음
 
 # 기타 Dockerfile 명령어
-https://docs.docker.com/build/
+https://docs.docker.com/engine/reference/builder/
 
 ENV : Dockerfile에서 사용될 환경 변수를 지정 ${ENV_NAME} 또는 $ENV_NAME 형태로 사용
 ex) 
@@ -1068,3 +1068,74 @@ USER : 컨테이너 내에서 사용될 사용자 계정이나 UID를 설정 그
 ex)
 RUN groupadd -r author && useradd -r -g author devsunset
 USER devsunset
+
+ONBUILD : 빌드된 이미지를 기반으로 하는 다른 이미지가 Dockfile로 생성될 때 실행할 명령어를 추가 
+ex)
+ONBUILD RUN echo "onbuild" >> /onbuild_file
+Dockerfile 빌드 할때 실행 되지 않으며 , 별도의 정보로 이미지에 저장될 뿐 
+나중에 빌드될 이미지를 위해 미리 저장해 놓는 기능
+
+STOPSIGNAL : 컨테이너가 정지될 때 사용될 시스템 콜의 종류를 지정 아무것도 설정 하지 않으면 기본적으로 SIGTERM으로 설정
+ex)
+STOPSIGNAL SIGKILL
+Dockerfile의 STOPSIGNAL은 docker run 명령어에요 --stop-signal 옵션으로 컨테이너에 개별적으로 설정 가능 
+docker stop , docker kill 에도 적용 
+
+HEALTHCHECK : 이미지로 부터 생성된 컨테이너에서 동작하는 애플리케이션의 상태를 체크 
+ex)
+vi Dockerfile
+FROM nginx
+RUN apt-get update && apt-get install curl -y
+HEALTHCHECK --interval=1m --timout=3s --retries=3 CMD curl -f http://localhost || exit 1
+curl 명령어로 nginx 1분마다 호출 하여 3초 이상 소요되면 이를 한번의 실패로 간주 3번 이상 타임아웃 발생 하면 해당 컨테이너는  unhealthy상태
+docker ps 항목중 STATUS 값과 docker inspect의 출력중 State - Health - Log 항목을 확인
+
+SHELL :  Dockerfile에서 기본적으로 사용 하는 Shell은 "/bin/bash -c" 윈도우에서는 "cmd /S /C"
+사용하려는 Shell을 따로 지정 CMD의 JSON배열을 통해 shell을 따로 지정 하는 것도 가능 하지만 SHELL을 사용하면 편리
+ex)
+SHELL ["/usr/local/bin/node"]
+
+COPY : 파일 복사 (ADD 명령어와 도일) - COPY는 로컬의 파일만 이미지에 추가 ADD는 외부 URL 및 tar파일에서도 파일을 추출하여 추가 할수 있다는 점이 차이
+ex)
+COPY test.html /home/
+COPY ["test.html", "/home"]
+ADD https://..../test.html /home
+ADD test.tar /home ( tar 파일을 그대로 추가 하는게 아니라 /home 디렉토리에 압축 해제 함)
+
+ENTRYPOINT : CMD 와 동일하게 컨테이너가 시작될 때 수행할 명령어 지정 
+커맨드를 인자로 받아 사용할 수 있는 스크립트의 역할을 할 수 있다는 점이 CMD와 차이점 
+
+# entrypoint : 없음 , cmd: /bin/bash
+docker run -i -t --name no_entrypoint ubuntu:14.04 /bin/bash
+root@host: /#   <- /bin/bash 쉘이 실행이 됨
+
+# entrypoint : echo , cmd : /bin/bash
+docker run -i -t --entrypoint="echo" --name yes_entrypoint ubuntu:14.04 /bin/bash
+/bin/bash <- 맨 마지막 값을 인자로 사용하여 /bin/bash 라는 값이 출력됨
+
+ entrypoint , cmd 둘중 하나라도 설정되어 있지 않으면 컨테이너 생성되지 않고 에러 발생 반드시 둘중 하나는 설정 해야 함
+
+entrypoint를 이용한 스크립트 실행 (실행할 스크립트는 컨테이너 내부에 존재해야 함)
+docker run -i -t --name entrypoint_sh --entrypoint="/test.sh" ubuntu:14.04 /bin/bash
+
+vi Dockerfile
+    FROM ubuntu:14.04
+    RUN apt-get update
+    RUN apt-get install apache2 -y
+    ADD entrypoint.sh /entrypoint.sh
+    RUN chmod +x /entrypoint.sh
+    ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+
+# JSON 배열 형태와 일반 형식의 차이점
+JSON 배열 형태로 입력하지 않으면 CMD와 ENTRYPOINT에 명시된 명령어의 앞에 /bin/bash -c가 추가
+CMD echo test
+# -> /bin/bash -c echo test
+JSON 배열 형태로 입력 하면 명령어가 그대로 사용
+CMD ["echo", "test"]
+# -> echo test
+
+# Dockerfile로 빌드할 때 주의할 점
+긴 구문 사용시  \ 를 사용 하여 가독성 높임
+.dockerignore 파일을 작성해 불피요한 파일 컨텍스트에 포함 배제 
+빌드 캐시 사용
+한줄 실행시 마다 이미지가 생성됨으로 RUN  명령어 실행시 && 조합으로 한번에 실행  
