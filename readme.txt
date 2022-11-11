@@ -1856,5 +1856,217 @@ docker service create --name engine_label2 \
 ############################
 ## 도커 컴포즈 
 
+여러 개의 컨테이너가 하나의 애플리케이션으로 동작하는 경우 (web+db) 매번 RUN 명령엉 옵션을 설정해 생성하기 보다는 
+하나의 서비스로 정의해 컨테이너 묶음으로 관리 
+
+여러 개의 컨테이너의 옵션과 환경을 정의한 파일을 읽어 컨테이너를 순차적으로 생성하는 방식으로 동작 
+컴포즈 설정 파일은 run  명령어의 옵션을 그대로 사용 할 수 있으며 각 컨테이너의 의존성, 네트워크, 볼륨등을 함께 정의 할 수 있음 
+스윔 모드의 서비스와 유사하게 설정 파일에 정의된 서비스의 컨테이너 수를 유동적으로 조절 할 수 있고 서비스 디스커버리 기능도 자동으로 처리 됨
+
+# 도커 컴포즈 설치 
+sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+ 설치 확인
+ docker-compose -v
+
+# 도커 컴포즈 사용
+
+# 기본 사용법 
+컨테이너 설정이 정의된 YAML 파일을 읽어 도커 엔진을 통해 컨테이너가 생성 
+docker-compose.yml  ->  docker-compose up -d ->  컨테이너 생성 
+
+# docker-compose.yml 작성과 활용
+https://docs.docker.com/compose/compose-file/
+
+docker run -d --name mysql alicek106/composetest:mysql mysqld 
+docker run -d -p 80:80 --link mysql:db --name web alicek106/composetest:web apachectl -DFOREGROUND
+
+ex) docker-compse.yml ( yml 들여 쓰기 할때 TAB은 도커가 인식하지 못함으로 2개의 공백을 사용해 하위 항목을 구분)
+version: '3'
+services:
+  web:
+    image: alicek106/composetest:web
+    ports:
+      - 80:80
+    links:
+      - mysql:db
+    command: apachectl -DFOREGROUND
+  mysql:
+    image: alicek106/composetest:mysql
+    command: mysqld
+   
+어떠한 설정을 하지 않으면 현재 디렉토리의 docker-compose.yml 파일을 읽어 로컬의 도커 엔진에게 컨테이너 생성 요청 함
+
+docker-compose.yml  파일 저장한 위치에서 아래 실행 명령 수행
+docker-compose up -d 
+- docker-compse up -d mysql (특정 서비스의 컨테이너만 생성 할수 있음)
+- docker-compose run web /bin/bash (docker-compose run 명령어로 컨테이너 생성 할수 있음 이때는 INteractive 셀을 사용할 수 있음 )
+
+docker ps
+docker-compose ps 
+
+컨테이너의 이름은 아래의 형식으로 생성됨
+[프로젝트이름]_[서비스이름]...[서비스 내에서의 번호]
+docker-compose.yml 파일이 위치한 디렉토리 이름을 프로젝트 이름으로 사용 함 
+
+아래 처럼 컨테이너를 scale 옵션 사용하여 여러 개도 생성 할 수 있음 
+docker-compose scale mysql=2 
+
+컨테이너 종료 후 삭제 처리 
+docker-compose down
+
+도커 컴포즈는 기본적으로 현재 디렉토리의 이름으로 된 프로젝트를 제어 
+ex)  /home/ubuntu 디렉토리에 docker-compose.yml 파일이 있고 docker-compose down 하면 
+      ubuntu 라는 이름을 가진 프로젝트를 삭제 
+-p 옵션에 프로젝트의 이름을 사용해 제어할 프로젝트의 이름을 명시 할수 있음
+docker-compose -p myproject up -d 
+docker-compose -p myproject ps 
+docker-compose -p myproject down 
+
+# 도커 컴포즈 활용 
+
+# YAML 파일 작성 
+YAML 파일은 크게 버전 정의, 서비스 정의, 볼륨 정의, 네트워크 정의 4가지 항목으로 구성 
+가장 많이 사용되는게 서비스 정의 이미 볼륨 , 네트워크 정의는 선택적 
+각 항목의 하위 항목을 정의 하려면 2개의 공백(space)로 들여쓰기해서 상위 항목과 구분
+
+docker-compose 는 실행시 현재 디렉토리 또는 상위 디렉토리에서 docker-compose.yml 파일 을 찾아 실행 됨
+-f 옵션을 사용 하여 yml 파일 위치를 지정할 수 있음
+docker-compose -f /home/compose_test/my_compose_file.yml up -d 
+
+1) 버젼 정의 
+YAML 파일 포멧에는 버젼 1, 2, 2.1, 3이  존재  버젼 3은 도커 스윔모드와 호환되는 버전이므로 가능하면 최신 버젼의 도커 컴포즈를 사용 하는 것이 좋음
+버전 항목은 일반적으로 YAML  파일의 맨 윗부분에 명시
+version: '3.0'
+
+2) 서비스 정의 
+도커 컴포즈로 생성할 컨테이너 옵션을 정의 
+서비스의 이름은 services의 하위 항목에 정의 하고 컨테이너 옵션은 서비스 이름의 하위 항목에 정의 
+
+services:
+  my_container_1:
+    image: ....
+  my_container_2:
+    image:...
+
+image : 컨테이너를 생성할 이미지 
+link: 다른 서비스에 서비스명만으로 접근 할 수 있도록 설정 --link 와 동일
+envionment: 서비스의 컨테이너 내부에서 사용할 환경 변수 -env, -e 와 동일 
+command: 컨테이너가 실행될 때 수행할 명령어 설정 run 명령어의 마지막에 붙는 커맨드와 동일 , 배열 형태로도 사용 할수 있음 
+depends_on: 특정 컨테이너의 의존 관계 이 항목에 명시된 컨테이너가 먼저 생성되고 실행 됨 link도 컨테이너의 생성 순서를 정의 하지만 depends_on은 서비스 이름만으로만 접근 할수 있다는 점이 상이 
+
+특정 서비스의 컨테이너만 생성하되 의존성이 없는 컨테이너를 생성하려면 --no-deps 옵션을 사용
+docker-compose up --no-deps web 
+
+link, depends_on 모두 생성 순서만 결정하지 실제 생성된 컨테이너의 서비스가 정상 기동 완료 되었는지 보장 안함
+이를 해결 하는 방법은 쉘 스크립트를 entrypoint로 지정하는 방법이 있음 
+entrypoint: ./sync_script.sh mysql:33306
+
+sync_script.sh 
+until (상태를 확인할 수 있는 명령어 ex: curl mysql:3306); do
+    echo "depend container is not available yet"
+    sleep 1
+done
+echo "depends_on container is ready"
+
+ports:컨테이너가 개방할 포트 -p 와 동일 ( 단일 호스트 환경에서 80:80 과 같이 호스트이 특정 포트를 서비스의 컨테이너에 연결 하면 docker-compose scale명령어로 컨테이너 수를 늘릴 수 없음)
+build: 항목에 정의된 Dockerfile에서 이미지를 빌드해 서비스의 컨테이너를 생성 
+          build: ./composetest  <- 실행 디렉토리 하위의 composetest 디렉토리 안의 Dockerfile 을 빌드 하여 이미지 생성 
+          Dockerfile에 사용될 컨텍스트나 Dockerfile의 이름, 사용될 인자 값을 설정 할 수 있음 
+ex)
+build: ,/composetest 
+context: ,/composetest 
+dockerfile: myDockerfile
+args:
+  HOST_NAME: web
+  HOST_CONFIG: self_config 
+
+build 항목을 YAML 파일에 정의해 프로젝트를 생성하고 난뒤 Dockerfile을 변경하고 다시 프로젝트를 생성해도 이미지를 새로 빌드 하지 않음 
+docker-compose up -d --build 처럼 오볏ㄴ을 추가 하거나 docker-compose build 명령어를 사용해 Dockerfile이 변경되도 컨테이너를 생성할 때마다 빌드 하돌고 설정 해야 함 
+docker-compose up -d --build
+docker-compose build [yml파일에서 빌드할 서비스 이름]
+
+extends: 다른 YAML 파일이나 현재 YAML 파일에서 서비스 속성을 상속받게 설정 
+ex)
+web:
+  extends: 
+    file: extend_compose.yml
+    service: extend_web 
+
+위 처럼 상속 처리 할수 있음 depenos_on, links, volume_from  항목은 각 컨테이너 사이의 의존성을 내포하고 있으므로 extends로 상속 안됨 
+
+3) 네트워크 정의 
+driver: 도커 컴포조는 기본으로 비리지 타입의 네트워크를 생성 해당 설정으로 다른 네트워크를 사용하게 설정 가능 
+           특정 드라이버에 필요한 옵션은 하위 항목인 driver_ops로 전달 할 수 있음 
+
+ipam: IPAM (IP Address manager) 를 위해 사용할 수 있는 옵션 subnet , ip 범위 등을 설정 
+external: YAML 파일을 통해 프로젝트를 생성할 때마다 네트워크를 생성하는 것이 아닌 기존 네트워크 사용하도록 설정 
+               이를 설정하려면 외부 네트워크의 이름을 하위 항목으로 입력한 뒤 external 값을 true 로 설정  driver,driver_ops,ipam 옵션과 함께 사용 불가 
+
+4) 볼륨 정의  
+driver: 볼륨을 생성할 때 사용될 드라이버를 설정 어떠한 설정도 하지 않음녀 local로 설정 
+external:  프로젝트를 생성할 때마다 매번 생성하지 않고 기존 볼륨을 사용 하도록 설정 
+
+5) YAML 파일 검증하기 
+오타 검사 및 파일 포맷이 적절한지 검사하려면 docker-compose config  명령어로 확인 
+docker-compose config 
+docker-compose config -f (yml 파일경로)
+
+# 도커 컴포즈 네트워크 
+YAML  파일에 네트워크 항목을 정의 하지 않으면 프로젝트별로 브리지 타입의 네트워크 생성 
+생성된 네트워크의 이름은 프로젝트이름_default로 설정 
+docker-compose up 명령어로 생성되고  docker-compose down 명령어로 삭제됨 
+docker-compose scale 명령어로 생성되는 컨테이너 전부도 이 브릿지 타입의 네트워크 사용
+서비스 냉의 컨테이너는 --net-alias가 서비스의 이를믈 갖도록 자동으로 설정  
+이 네트워크에 속한 컨테이너는 서비스의 이름으로 서비스 내의 컨테이너에 접근 가능 
+ 
+  ex) web 서비스에서 mysql 서비스명으로 접근 가능 mysql 서비스명의 컨테이너가 여려대일 경우 라운드 로빈 방식으로 반환 
+
+  # 도커 스윔 모드와 함께 사용하기 
+  도커 컴포즈 1.10 버전에서 스윔 모드와 함께 사용할 수 있는 YAML 3 버젼이 배포됨과 동시에 스윔 모드와 함께 사용 되는 개념인
+  stack 이 도커 엔지 1.13 버전에 추가 됬음
+  
+  stack은 YAML 파일에서 생성된 컨테이너 묶음으로서    YAML 파일로 스택을 생성하면 생성된 서비스가 스윔 모드이 클러스터에 일괄적으로 생성됨 
+ 
+  stack은 도커 컴포즈 명령어인 docker-compose가 아닌 docker stack 으로 제어 해야 함 
+  stack을 생성하고 삭제하는 작업은 스윔 매니저에서만 수행 됨 
+
+  # 스택 사용 하기 
+   
+   vi docker-compose.yml 
+   networks: {}
+   services: 
+     mysql:
+       command: mysqld 
+       image: alicek105/composetest:mysql 
+    web:
+     command: apachectl -DFOREGROUND
+     image: alicek106/composetest:web 
+     link:
+     - mysql:db 
+     ports:
+     - 80:80
+  version: '3.0'
+  volumes: {}
+
+
+  docker stack deploy -c docker-compose.yml mystack 
+  
+  생성 확인 
+  docker stack ls 
+
+  삭제 
+  docker stack rm mystack 
+
+  # 스택 네트워크 
+  자동으로 생성 
+  도커 컴포즈의 네트워크와 다르게 스택의 네트워크는 기본적으로 오버레이 네트워크 속성을 가지며 스윔 클러스터에서 사용하도록 설정됨 
+
+
+https://github.com/moby
+https://github.com/opencontainers/runc
+https://github.com/containerd/containerd
+
 
 
