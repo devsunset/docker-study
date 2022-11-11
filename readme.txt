@@ -1668,14 +1668,190 @@ mysql:5.7
 target 의 값에 절대 경로를 입력해 /run/secrets가  아닌 다른 경로에 secret 파일을 공유 할 수도 있음
 target=/home/mysql_root_password 
 
+# config
+secret 사용 방식과 동일
 
+docker config create registry-config config.xml
+docker config ls  (secret 와는 다르게  Data라는 항목이 존재 내용을 base64로 저장됨)
+echo base64인코딩값 | base64 -d  로 확인해 보면 내용 확인 가능
 
+docker service create --name yml_registry -p 5000:5000 \
+--config source=registry-config, target=/etc/docker/registry/config.xml \
+registry:2.6
 
+secret ,config 값은 수정이 안됨
+docker service update --config-rm, --config-add, --secret-rm, --secret-add 옵션을 사용해 추가 하고 삭제 가능 
 
+# 도커 스윔 네트워크 
+스윔 모드는 여려 개의 도커 엔진에 같은 컨테이너를 분산해서 할당 하기 때문에 각 도커 데몬이 하나로 묶일수 있는 네트워크 풀이 필요
+어느 노드로 접근 하더라도 해당 서비스의 컨테이너에 접근 할 수 있게 라우팅 기능도 필요 
 
+매니저 노드
+docker network ls
+docker_gwbridge , ingress
+docker_gwbridge : 스윔에서 오버레이 네트워크를 사용할 때 사용 
+ingress : 로드 밸런싱과 라우팅 메시에 사용 
 
+# ingress 네트워크
+스윔 클러스터를 생성하면 자동으로 등록되는 네트워크 스윔 모드를 사용할 때만 유효 
+어떤 스윔 노드에 접근하더라도 서비스 냉의 컨테이너에 접근할 수 있게 설정하는 라우팅 메시를 구성 서비스 내의 컨테이너에 대한 접근을
+라운드 로빈 방식으로 분산하는 로드 밸런싱을 담당 
 
+alicek106/book:hostname 이미지는 웹으로 접속시 설치된 컨테이너의  ID를 화면에 출력
+docker service create --name hostname -p 80:80 --replicas=4 alicek106/book:hostname
+docker ps 로 ONTAINER_ID 확인 
+http://192.168.0.100으로 계속 접근해 보면 4개의 컨테이너 의 호스트 이름이 출력됨
 
+ingress 네트워크를 사용하지 않고 호스트의 8080번 포트를 직접 컨테이너의 80번 포트에 연결하는 예
+docker service create --publish mode=host, target=80,published=8080,protocol=tcp --name web nginx
+
+# overlay 네트워크 
+docker exec 컨테이너ID ifconfig
+위의 명령어로 확인해 보면 
+manager에서 생성된 컨테이너와 worker에서 생성된 컨테이너는 IP주소가 차례로 할당
+
+ingress 네트워크는 오버레이 네트워크 드라이버를 사용 
+오버레이 네트워크는 여러 갱의 도커 데몬을 하나의 네트워크 풀로 만드는 네트워크 가상화 기술의 하나 
+여려 개의 스윔 노드에 할당된 컨테이너는 서로 통신 가능 
+
+# docker_gwbridge 네트워크
+오버레이 네트워크를 사용하지 않는 컨테이너는 기본적으로 bridge 네트워크를 사용해 외부와 연결 
+ingress를 포함한 모든 오버레이 네트워크는 이와 다른 브릿지 네트워크인 docker_gwbride 네트워크와 함께 사용 됨
+
+# 사용자 정의 오버레이 네트워크 
+스윔 모드는 자체 키-값 저장소를 갖고 있으므로 별도의 구성 없이 사용자 정의 오버레이 네트워크 생성, 사용 가능
+
+docker network create --subnet 10.0.9.0/24 -d overlay myoverlay 
+모든 노드에서 실행할 필요 없음 클러스터 내에 속한 노드 하나에서만 실행해도 다른 노드에 자동으로 적용 
+오버레이 네트워크는 생성한 즉시 모든 노드에 적용되는 것이 아니라 각 노드에 해당 오버레이 네트워크를 사용 하는 서비스의 컨테이너가 할당 될때 적용 됨
+
+docker network ls
+새로 생성된 myoverlay 의 SCOPE가 swarm 으로 설정되어 있음 스윔 클러스트에서만 사용 할수 있다는 의미 
+매니저 노드에서 docker service create 명령어를 통해서만 이 네트워크를 사용 하는 서비스를 생성 할 수 있음 
+docker run --net 명령어로 스윔 모드의 오버레이 네트워크를 사용하려면 네트워크 생성시 --attachable 옵션을 추가해서 생성해야 함
+docker network create -d overlay --attachable myoverlay2 
+docker run -it --net myoverlay2 ubuntu:14:04
+
+docker service create --name overlay_service --network myoverlay --replicas 2 alicek106/book:hostname
+
+docker service create 명령어에서 -p 옵션을 사용하지 않음으로써 서비스를 외부로 노출하지 않으면 컨테이너는 ingress 네트워크를 
+사용하도록 설정되지 않음 
+
+# 서비스 디스커버리 
+같은 컨테이너를 여러 개 만들어 사용시 쟁점은 컨테이너의 생성,삭제 에 대한 감지 
+일반적으로 이동작은 주키퍼, etcd등의 분산 코디네이터를 외부에 두고 사용 해야 하지만 스윔 모든ㄴ 서비스 발견 기능를 자체적으로 지원
+
+docker network create -d overlay discovery 
+docker service create --name server --replicas 2 --network discovery alicek106/book:hostname
+docker service create --name client --network discovery alicek106/bootk:curl ping docker.com
+docker service ps client
+docker exec -it clinet_container_id bash
+컨테이너 내부에서 curl 명령어를 이용해 server에 접근 (매번 curl 명령어 실행 시 마다 다른 컨테이너 반환 - 라운드 로빈 방식)
+curl -s server | grep Hello
+docker serice scale server=3
+docker exec -it clinet_container_id bash
+컨테이너 내부에서 curl 명령어를 이용해 server에 접근 (새로 생성한 컨테이너에 접속 확인)
+위의 VIP (Virtual IP) 방식이 아닌 도커의 내장 DNS 서버를 기반으로 라운드 로빈을 할 수도 있음
+docker service create --name server --replicas 2 --network discovery --endpoint-mode dnsrr alicek106/book:hostname
+이 경우 애플리케이션 캐시 문제로 인해 서비스 발견이 정상적으로 동작 안할 때도 있음으로 VIP 방식으로 사용 하는 것이 좋음
+
+# 스윔 모드 볼륨
+- 호스트와 디렉터리를 공유하는 경우
+docker run -i -t --name host_dir_case -v /root:/root ubuntu:14.04
+
+- 도커 볼륨을 사용 하는 경우
+docker run -i -t --name volume_case -v myvolume;/root ubuntu:14.04
+
+스윔 모드에서는 서비스를 생성할때 도커 볼륨을 사용할지 호스트와 디렉토리를 공유할지 명시 해야 함
+
+# volume 타입의 볼륨 생성
+--mount 옵션 type값을 volume 로 지정 , source는 사용할 볼륨이고 target는 컨테이너 내부에 마운트될 디렉토리 위치 
+source명시 하지 않으면 임의의 16진수로 구성된 익명의 이림을 가진 볼륨을 생성 
+docker service create --name ubuntu \
+--mount type=volume, source=myvol, target=/root \
+ubuntu:14.04 \
+ping docker.com
+
+서비스의 컨테이너에서 볼륨에 공유할 컨테이너의 디렉토리에 파일이 이미 존재하면 이파일들은 볼륨에 복사되고 호스트에서 별도의 공간을 차지
+volume-nocopy추가 하면 복사 하지 않음 
+
+docker service create --name ubuntu --mount type=volume,source=test,target=/etc/vim ubuntu:14.04 ping docker.com
+docker run -i -t --name test -v test:/root ubuntu:14.04
+ls root/
+vimrc vimrc.tiny
+
+docker service create --name ubuntu --mount type=volume,source=test,target=/etc/vim/,volume-nocopy ubuntu:14.04 ping docker.com
+docker run -i -t --name test2 -v test:/root ubuntu:14.04
+ls root/
+파일 없음
+
+# bind 타입의 볼륨 생성
+바인드 타입은 호스트와 디렉토리를 공유 할때 사용 , 공유될 호스트이 디렉토리를 설정해야 함으로 반드시 source 옵션을 명시 
+type옵션 값을 bind로 설정
+docker service create --name ubuntu --mount type=bind, source=/root/host,target=/root/container ubuntu:14.04 ping docker.com
+
+# 스윔 모드에서 볼륨의 한계점 
+컨테이너 할당시 볼륨 공유 하기 힘듬 
+어느 노드에서도 접근 가능한 퍼시스턴트 스토리지를 사용 하여 해결 
+퍼시스턴트 스토리지 : 호스트와 컨테이너와 별개로 외부에 존재해 네트워크로 마운트 할 수 있는 스토리지 
+각 노드에 Label을 붙여 서비스에 제한을 설정 하여 해결
+특정 서비스의 동작에 필요한 볼륨이 존재하는 노드에만 컨테이너 할당 
+
+# 도커 스윔 모드 노드 다루기 
+
+# 노드 AVAILABILITY 변경
+docker node ls
+특정 노드의 AVAILABILITY를 설정함으로써 컨테이너의 할당 가능 여부를 변경 할 수 있음
+
+# Active
+기본으로 설정되는 상태 노드가 컨테이너를 할당 받을수 있음을 의미 
+Active  상태가 아닌 노드를 Active 상태로 변경
+docker node udpate --availability active swarm-worker1 (노드 HOSTNAME)
+
+# Drain
+스윔 매니저의 스케쥴러는 컨테이너를 해당 노드에 할당 하지 않음 
+Drain  상태는 일반적으로 매니저 노드에 설정 하는 상태지만 노드에 문제가 생겨 일시적으로 사용하지 않는 상태로 설정해야 하는 경우 사용 
+docker node update --availability drain swarm-worker1 (노드 HOSTNAME)
+노드를 Drain 상태로 변경하면 해당 노드에서 실행 중이던 서비스의 컨테이너는 전부 중지 되고  Active 상태의 노드로 다시 할당 됨
+Active상태로 다시 돌린다고 해서 컨테이너가 다시 분산 되어 균형이 맞게 처리 되지는 않음  docker service scale 명령어로 재조정 해주어야 함
+
+# Pause 
+서비스의 컨테이너를 다시 할당 받지 않는 다는 점에서는 Drain과 같지만 실행 중인 컨테이너를 중지 하지 않는 다는 점이 Drain하고 차이 
+docker node update --availability pause swarm-worker1 (노드 HOSTNAME)
+
+# 노드 라벨 추가 
+노드를 분류 , 라벨은 키-값 형태 키 값으로 노드를 구별 할 수 있음 
+특정 노드에 라벨을 추가하면 서비스를 할당할 때 컨테이너를 생성할 노드의 그룹을 선택하는 것이 가능
+라벨 :  storge=ssd
+docker node update --label-add storge=ssd swarm-worker1 
+docker node inspect --pretty swarm-worker1 로 확인 
+
+# 서비스 제약 설정 
+
+1) node.labels 제약 조건 
+docker service create 명령어에 --constraint 옵션을 추가해 서비스의 컨테이너가 할당될 노드의 종류를 선택 할 수 있음
+docker service craete --name label_test --constraint 'node-labels.storage == ssd' --replicas=5 ubuntu:14.04 ping docker.com
+-- constraint 옵션에서는 특정 조건으 찾기 위해 == , != 를 사용할 수 있음
+docker ps 명령어로 확인
+
+2) node,id 제약 조건  
+docker service create --name label_test2 --constraint 'node.id == 노드id_전체값 ' --replicas=5 ubuntu:14.04 ping docker.com
+
+3) node.hostname과 node.role 제약 조건 
+docker service create --name label_test3 --constraint 'node.hostname == swarm-worker1' ubuntu:14.04 ping docker.com
+docker service create --name label_test4 --constraint 'node.role != manager' --replicas 2 ubuntu:14.04 ping docker.com 
+
+4) engine,labels 제약 조건
+도커 엔진 자체에 라벨 부여 해서 제한 조건 설정
+도커 데몬 실행 옵션을 변경 (변경된 내용은 docker info로 확인 가능)
+DOCKER_OPTS="... --label=mylabel=worker2 --label myalbel2=second_worker ..."
+docker srvice create --name engine_label --constraint 'engine.labels.mylabel == worker2' --replicas=3 ubuntu:14.04 ping docker.com
+
+제한 조건은 여러 개를 사용 할 수도 있음
+docker service create --name engine_label2 \
+--constraint 'engine.labels.mylabel == worker2' \
+--constraint 'engine.labels.mylabel2 == sencond_worker' \
+--replicas=3 ubuntu:14.04 ping docker.com 
 
 ############################
 ## 도커 컴포즈 
