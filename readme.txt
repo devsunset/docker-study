@@ -81,25 +81,25 @@ Options:
       --tlsverify          Use TLS and verify the remote
   -v, --version            Print version information and quit
 
-Management Commands:
-  builder     Manage builds
+Managerment Commands:
+  builder     Manager builds
   buildx*     Docker Buildx (Docker Inc., v0.8.2)
   compose*    Docker Compose (Docker Inc., v2.5.0)
-  config      Manage Docker configs
-  container   Manage containers
-  context     Manage contexts
-  image       Manage images
-  manifest    Manage Docker image manifests and manifest lists
-  network     Manage networks
-  node        Manage Swarm nodes
-  plugin      Manage plugins
-  secret      Manage Docker secrets
-  service     Manage services
-  stack       Manage Docker stacks
-  swarm       Manage Swarm
-  system      Manage Docker
-  trust       Manage trust on Docker images
-  volume      Manage volumes
+  config      Manager Docker configs
+  container   Manager containers
+  context     Manager contexts
+  image       Manager images
+  manifest    Manager Docker image manifests and manifest lists
+  network     Manager networks
+  node        Manager Swarm nodes
+  plugin      Manager plugins
+  secret      Manager Docker secrets
+  service     Manager services
+  stack       Manager Docker stacks
+  swarm       Manager Swarm
+  system      Manager Docker
+  trust       Manager trust on Docker images
+  volume      Manager volumes
 
 Commands:
   attach      Attach local standard input, output, and error streams to a running container
@@ -1504,11 +1504,68 @@ docker info | grep Swarm
 서버 클러스트링 할때는 반드시 각 서버의 시각을 NTP 툴을 이용해 동기화 처리 해야 함
 
 # 도커 스윔 모드의 구조 
-Manage Node , Worker Node 구성
+Manager Node , Worker Node 구성
 Worker Node는 실제로 컨테이너가 생성 되고 관리 됨
-Manage  Node는 Worker Node를 관리 하기 위한 도커 서버 (Manage Node에 컨테이너 생성 가능 - 기본저긍로 Worker  Node의 역활을 포함)
-Manage Node 는 1개 이상 Worker Node 는 없을 수도 있음 (운영은 스윔 클러스터가 유지 될수 있도록  Manage 다중와 - 다중화 한다고 해서 성능 향상은 안됨)
-Manage Node 가 절반 이상의 장애가 발생 하여 정상적으로 작동 하지 않을 경우 장애가 생긴 Manage Node가 복구 될때까지 클러스터 운영을 중단 (가능한 홀수 갯수로 구성 )
+Manager  Node는 Worker Node를 관리 하기 위한 도커 서버 (Manager Node에 컨테이너 생성 가능 - 기본저긍로 Worker  Node의 역활을 포함)
+Manager Node 는 1개 이상 Worker Node 는 없을 수도 있음 (운영은 스윔 클러스터가 유지 될수 있도록  Manager 다중와 - 다중화 한다고 해서 성능 향상은 안됨)
+Manager Node 가 절반 이상의 장애가 발생 하여 정상적으로 작동 하지 않을 경우 장애가 생긴 Manager Node가 복구 될때까지 클러스터 운영을 중단 (가능한 홀수 갯수로 구성 )
+
+# 도커 스윔 모드 클러스터 구축
+
+[구축 서버]
+swarm-manager 192.168.0.100
+swarm-worker1 192.168.0.101
+swarm-worker2 192.168.0.102
+
+매니저 역활을 할 서버에 docker swarm init 으로 스윔 클러스터 시작 
+docker swarm init --advertise-addr 192.168.0.100
+
+하단 내용 출력됨 (해당 내용을 워커 노드에서 실행)
+docker swarm join --token SWMTKN-1-32l44w28pj3wkvfefan1pwau8us8qe30ddbbdw8rsqe5ukcepe-ekvq5ue9jnez7ko3paurdfwk3 192.168.0.100:2377
+
+스윔 매니저는 기본적으로 2377 포트 사용
+노드 사이의 통신에 7946/tcp, 7946/udp
+스윔이 사용하는 네트워크인 ingress 오버레이 네트워크에 4789/tcp, 4789/udp 포트 사용 됨
+
+워커 노드에 아래와 같이 설정
+docker swarm join --token SWMTKN-1-32l44w28pj3wkvfefan1pwau8us8qe30ddbbdw8rsqe5ukcepe-ekvq5ue9jnez7ko3paurdfwk3 192.168.0.100:2377
+
+설정 결과 확인 하려면 매니저 노드에서 아래 명령어 실행해서 확인 
+docker node ls
+
+매니저 노드는 일반적인 역활을 하는 노드와 리더 역활을 하는 노드로 구분
+리더 매니저는 모든 매니저 노드에 대한 데이터 동기화와 관리를 담당 하므로 항상 작동 기동중이어야 함
+리더 매니저가 다운되면 매니저 노드는 새로운 리더를 선출 (Raft Consensus 알고리즘)
+
+새로운 매니저 추가 하려면 매니저 노드를 위한 토큰을 사용해 docker swarm join 명령어를 실행
+매니저 노드를 위한 토큰은 아래 명령어로 확인 가능
+docker swarm jonin-token manager
+
+워커 노드 추가 하기 위한 토큰도 아래 명령어로 확인 가능  
+docker swarm join-toker worker 
+
+토큰 갱신 
+swarm joion 명령어에 --rotate 옵션 사용 
+docker swarm join-token --rotate manager
+
+추가된 워커 노드를 삭제 (삭제 하려는 워커 노드 서버에서 아래 명령 실행)
+docker swarm leave
+
+워커 노드가 leave  명령어로 스윔 모드를 해제 하면 매니저 노드는 해당 워커 노드의 상태를  Down으로 인지할 뿐 워커 노드를 삭제 하지는 않음
+매니저 노드에서 docker node rm 명령어를 사용해 해당 노들 삭제 해야 함
+
+docker node ls
+docker node rm HOST_NAME ( 위의 명령 실행시 나오는 결과 값 항목 중 HOST_NAME)
+
+매니저 노드는 docker swarm leave 명령어에 --force 옵션을 추가해야만 삭제 가능 
+매니저 노드 한개 일때 삭제 하면 스윔 클러스터는 더이상 사용 못함 
+docker swarm leave --force
+
+워커 노드를 매니저 노드로 변경
+docker node promote HOST_NAME
+
+매니저 노드를 워커 노드로 변경 (매니저 노드가 1개일때는 사용 못함) - 리더 매니저 노드에서 사용시 새로운 리더 매니저 노드가 선출 됨
+docker node demote  HOST_NAME 
 
 
 
