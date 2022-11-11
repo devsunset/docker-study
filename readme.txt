@@ -1567,6 +1567,113 @@ docker node promote HOST_NAME
 매니저 노드를 워커 노드로 변경 (매니저 노드가 1개일때는 사용 못함) - 리더 매니저 노드에서 사용시 새로운 리더 매니저 노드가 선출 됨
 docker node demote  HOST_NAME 
 
+# 스윔 모드 서비스
+기존은 docker 대상이 Container 스윔모드 에서는 대상이  서비스(같은 이미지에서 생성된 컨테이너 집합 - 서비스 제어시 컨테이너에 같은 명령 실행됨)
+함께 생성된 컨테이너 replica라고 함
+서비스에 설정된 레플리카의 수만큼 컨테이너가 스윔 클러스터에 존재 (모니터링 하다 서비스 내에 정의된 레플리카의 수만큼 존재 하지 않으면 새로 생성)
+
+Rolling Update 기능
+서비스 내 컨테이너들의 이미즐ㄹ 일괄적으로 업데이트 해야 할때 순서대로 변경해 서비스 자체가 다운되지 않게 업데이트 진행 
+
+# 서비스 생성
+서비스를 제어하는 도커 명령어는 전부 매니저 노드에서만 사용
+docker servvice create
+docker service create ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+서비스 내의 컨테이너는 detached 모드로 즉 docker run 명령어의 -d 옵션을 사용해 동작할 수 있는 이미지를 사용해야 함
+docker service create ubuntu:14.04 처럼 컨테이너 생성시 내부를 차지하고 있는 프로세스가 없어 컨테이너가 정지될 것이고 
+스윔 매니저는 서비스의 컨테이너에 장애가 생긴 것으로 판단 하여 계속 반복 해서 생성 하게 됨
+
+서비스 목록 확인
+docker service ls
+
+서비스의 자세한 정보 확인 (서비스 냉의 컨테이너 목록, 상태, 할당된 노드의 위치 확인 가능)
+docker service ps [서비스 이름]
+
+서비스 삭제 (docker rm 과 달리 서비스가 운영중이더라도 삭제 처리 됨)
+docker service rm [서비스 이름]
+
+서비스 생성을 위해 Private 저장소 또는 레지스트리에서 이미지를 받아올 경우 매니저 노드에서 로그인한 뒤
+docker service create 명령어에 --with-registry-auth를 추가해 사용하면 워커 노드에서 별도로 로그인 처리 하지 않아도 됨
+
+# nginx 웹 서버 서비스로 생성하기 (replica 사용)
+docker service create --name myweb --replicas 2 -p 80:80 nginx
+docker service ps myweb
+
+manager, worker1 서버에 각각 생성 되었다고 해도 worker2에 80 포트로 접속 하면 nginx 서비스에 접근이 됨
+각 노드의 80 포트로 들어온 요청을 생성된 컨테이너 중 1개로 리다이렉트 하기 때문
+스윔 모드는 Round-robin 방식으로 서비스 내에 접근할 컨테이너 결정 
+
+Replica  갯수 늘리기 
+docker service scale myweb=4
+
+# global 서비스 
+서비스 모드 
+1. Replica 수를 정의해 그 만큼의 컨테이너를 생성하는 복제 모드 
+2. global  스윔 클러스터 내에서 사용할 수 있는 모든 노드에 컨테이너를 하나씩 생성 레플리카 셋의 수를 별도로 지정 안함
+   스윔 클러스터를 모니터링 하기 위한 에이전트 컨테이너 등을 생성해야 할때 유용
+
+docker service create --mode global
+docker service create --mode global -- name global_web nginx
+
+# 스윔 모드의 서비스 장애 복구
+Replica 모드에서는 자동으로 처리 , 장애가 발생한 경우 새로 생성되는데 장애 발생한 컨테이너를 복구해도 자동으로 다시 균형이 맞춰 지지는 않음
+docker service scale 명령어로 다시 조정해야 함
+
+# 서비스 롤링 업데이트 
+docker service create --name myweb2 --replicas 3 nginx:1.10
+docker service update --image nginx:1.11 myweb2
+
+docker service ps myweb2 명령어로 출력된 결과 중
+NAME 항목이 \_ myweb2.1인 컨테이너는 롤링 업데이트 대상이 되어 삭제된 컨테이너 
+\_ 값이 붙어 있는 컨테이너는 어떠한 이유로든 동작을 멈춘 컨테이너로서 서비스에서의 컨테이너 변경 기록을 나타냅니다. 
+
+컨테이너 레플리카를 10초 단위로 업데이트 하며 업데이트 작업을 한번에 2개의 컨테이너에서 수행 
+docker service create --replicas 4 --name myweb3 --update-delay 10s --update-parallelism 2 nginx:1.10
+
+docker service inspect , docker inspect --type 명령어로 확인 가능
+docker service inspect --pretty myweb3
+출력되는 항목중 On failure: pause   내용은 업데이트 도중 오류가 발생하면 롤링 업데이트를 중지 한다는걸 의미
+
+--update-failure-action 옵션을 써서 오류가 발생해도 계속 진행 할수 있음
+docker service create --name myweb4 --replicas 4 --update-failure-action continue nginx:1.10
+
+업데이트 후 서비스를 롤링 업데이트 이전으로 되돌리는 처리 가능
+docker service rollback myweb3
+
+# 서비스 컨테이너에 설정 정보 전달 하기 : config, secret
+ -v , -e 옵션 등을 사용해서 처리 
+docker run -d --name yml_registry -p 5002:5000 --restart=alwasy -v $(pwd)/config.yml:/etc/docker/registry/config.yml registry:2.6
+docker run -d --name wordpressdb_hostvolume -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
+-v /home/wordpress_db:/vr/lib/mysql mysql:5.7
+
+스윔 모드는 config , secret 제공 (스윔 모드에서만 제공됨)
+secret : 비밀번호나 SSH키 , 인증서 키와 같이 보안에 민감한 데이타를 전송하기 위해 사용
+config : 설정 파일 등 암호화할 필요가 없는 설정값들에 쓰임
+
+# secret (매니지 노드간에 암호화된 값으로 저장됨 - 파일이 아닌 메모리에 저장 되기 때문에 컨테이너 삭제 될 경우 secret도 삭제됨)
+echo 1q2w3e4r | docker secret create my_mysql_password -
+
+docker secret ls
+docker secret inspect my_mysql_password (출력 내용에서도 실제 값은 확인 불가)
+
+docker service create --name mysql --replicas 1 \
+--secret source=my_mysql_password, target=mysql_root_password \
+--secret source=my_mysql_password, target=mysql_password \
+-e MYSQL_ROOT_PASSWORD_FILE="/run/secrets/mysql_root_password" \
+-e MYSQL_PASSWORD_FILE="/run/secrets/mysql_password" \
+-e MYSQL_DATABASE="wordpress" \
+mysql:5.7
+
+--secret 옵션을 통해 컨테이너로 공유된 값은 기본적으로 컨테이너 내부의 /run/secrets 디렉토리에 마운트됨
+target 의 값에 절대 경로를 입력해 /run/secrets가  아닌 다른 경로에 secret 파일을 공유 할 수도 있음
+target=/home/mysql_root_password 
+
+
+
+
+
+
+
 
 
 
